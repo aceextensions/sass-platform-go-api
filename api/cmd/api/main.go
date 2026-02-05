@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	_ "github.com/aceextension/api/docs"
+	"github.com/aceextension/core/apperrors"
 	"github.com/aceextension/core/config"
 	"github.com/aceextension/core/db"
 	"github.com/aceextension/core/logger"
@@ -40,6 +41,7 @@ func main() {
 	authHandler := handler.NewAuthHandler(authService)
 
 	e := echo.New()
+	e.HTTPErrorHandler = apperrors.GlobalErrorHandler
 
 	// Middleware
 	e.Use(echoMiddleware.Logger())

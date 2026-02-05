@@ -30,6 +30,7 @@ type AuthRepository interface {
 
 	// Transaction support for registration
 	WithTransaction(ctx context.Context, fn func(repo AuthRepository) error) error
+	GetTx() pgx.Tx
 }
 
 type pgAuthRepository struct {
@@ -38,6 +39,14 @@ type pgAuthRepository struct {
 
 func NewAuthRepository() AuthRepository {
 	return &pgAuthRepository{}
+}
+
+func NewAuthRepositoryWithTx(tx pgx.Tx) AuthRepository {
+	return &pgAuthRepository{tx: tx}
+}
+
+func (r *pgAuthRepository) GetTx() pgx.Tx {
+	return r.tx
 }
 
 func (r *pgAuthRepository) getExecutor() db.QueryExecutor {

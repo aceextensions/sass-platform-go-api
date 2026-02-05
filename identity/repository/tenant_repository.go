@@ -17,6 +17,7 @@ type TenantRepository interface {
 
 	// Transaction support
 	WithTransaction(ctx context.Context, fn func(repo TenantRepository) error) error
+	GetTx() pgx.Tx
 }
 
 type pgTenantRepository struct {
@@ -25,6 +26,14 @@ type pgTenantRepository struct {
 
 func NewTenantRepository() TenantRepository {
 	return &pgTenantRepository{}
+}
+
+func NewTenantRepositoryWithTx(tx pgx.Tx) TenantRepository {
+	return &pgTenantRepository{tx: tx}
+}
+
+func (r *pgTenantRepository) GetTx() pgx.Tx {
+	return r.tx
 }
 
 func (r *pgTenantRepository) getExecutor() db.QueryExecutor {

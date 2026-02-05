@@ -87,8 +87,8 @@ func (s *authService) RegisterTenant(ctx context.Context, data dto.RegisterTenan
 		}
 
 		// We need to ensure AuthRepo uses the SAME transaction
-		// Professional way: Repository should accept the transaction context or be transaction-aware
-		return s.authRepo.CreateUser(ctx, &user)
+		authRepoTx := repository.NewAuthRepositoryWithTx(tr.GetTx())
+		return authRepoTx.CreateUser(ctx, &user)
 	})
 
 	if err != nil {
