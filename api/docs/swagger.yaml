@@ -1,0 +1,176 @@
+basePath: /api
+definitions:
+  github_com_aceextension_identity_dto.AuthResponse:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_aceextension_identity_dto.UserResponse'
+    type: object
+  github_com_aceextension_identity_dto.LoginDTO:
+    properties:
+      password:
+        type: string
+      phone:
+        type: string
+    required:
+    - password
+    - phone
+    type: object
+  github_com_aceextension_identity_dto.RegisterTenantDTO:
+    properties:
+      email:
+        type: string
+      ownerName:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      phone:
+        type: string
+      tenantName:
+        type: string
+    required:
+    - ownerName
+    - password
+    - phone
+    - tenantName
+    type: object
+  github_com_aceextension_identity_dto.UserResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      role:
+        type: string
+      tenantId:
+        type: string
+    type: object
+  github_com_aceextension_identity_dto.VerifyOTPDTO:
+    properties:
+      otp:
+        type: string
+      phone:
+        type: string
+    required:
+    - otp
+    - phone
+    type: object
+host: localhost:4000
+info:
+  contact: {}
+  description: High performance Go API for AceExtension
+  title: AceExtension API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with phone or email and password
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_aceextension_identity_dto.LoginDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_aceextension_identity_dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User Login
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new tenant and its administrative user
+      parameters:
+      - description: Tenant Registration Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_aceextension_identity_dto.RegisterTenantDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new tenant
+      tags:
+      - auth
+  /auth/verify-otp:
+    post:
+      consumes:
+      - application/json
+      description: Verify the 6-digit OTP sent during registration
+      parameters:
+      - description: OTP Verification Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_aceextension_identity_dto.VerifyOTPDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_aceextension_identity_dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Verify registration OTP
+      tags:
+      - auth
+swagger: "2.0"
