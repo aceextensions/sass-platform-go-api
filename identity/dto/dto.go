@@ -50,3 +50,16 @@ type ResetPasswordDTO struct {
 	OTP         string `json:"otp" validate:"required,len=6"`
 	NewPassword string `json:"newPassword" validate:"required,min=6"`
 }
+
+type RefreshTokenDTO struct {
+	RefreshToken string `json:"refreshToken" validate:"required"`
+}
+
+type LogoutDTO struct {
+	RefreshToken *string `json:"refreshToken"`
+}
+
+type ChangePasswordDTO struct {
+	OldPassword string `json:"oldPassword" validate:"required"`
+	NewPassword string `json:"newPassword" validate:"required,min=6"`
+}

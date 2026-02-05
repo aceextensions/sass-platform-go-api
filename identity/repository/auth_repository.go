@@ -14,11 +14,13 @@ type AuthRepository interface {
 	CreateUser(ctx context.Context, user *models.User) error
 	GetUserByPhone(ctx context.Context, phone string) (*models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	GetUserByIdentifier(ctx context.Context, identifier string) (*models.User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 	UpdateUserVerification(ctx context.Context, userID uuid.UUID, isVerified bool) error
 	UpdateUserPassword(ctx context.Context, userID uuid.UUID, passwordHash string) error
 	UpdateLastLogin(ctx context.Context, userID uuid.UUID) error
 	UpdateOTP(ctx context.Context, userID uuid.UUID, otp *string, expiresAt *time.Time) error
+	GetUsersByTenantID(ctx context.Context, tenantID uuid.UUID) ([]*models.User, error)
 
 	// Session management
 	CreateSession(ctx context.Context, session *models.Session) error
@@ -85,8 +87,24 @@ func (r *pgAuthRepository) GetUserByEmail(ctx context.Context, email string) (*m
 	return &user, nil
 }
 
+func (r *pgAuthRepository) GetUserByIdentifier(ctx context.Context, identifier string) (*models.User, error) {
+	query := `SELECT id, tenant_id, name, email, phone, password_hash, role, is_verified, otp, otp_expires_at, is_active, last_login, created_at, updated_at 
+			  FROM users 
+			  WHERE phone = $1 OR email = $2`
+	var user models.User
+	err := r.getExecutor().QueryRow(ctx, query, identifier, identifier).Scan(
+		&user.ID, &user.TenantID, &user.Name, &user.Email, &user.Phone, &user.PasswordHash,
+		&user.Role, &user.IsVerified, &user.OTP, &user.OTPExpiresAt, &user.IsActive,
+		&user.LastLogin, &user.CreatedAt, &user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (r *pgAuthRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
-	query := `SELECT id, tenant_id, name, email, phone, password_hash, role, is_verified, otp, otp_expires_at, is_active, last_login, created_at, updatedAt FROM users WHERE id = $1`
+	query := `SELECT id, tenant_id, name, email, phone, password_hash, role, is_verified, otp, otp_expires_at, is_active, last_login, created_at, updated_at FROM users WHERE id = $1`
 	var user models.User
 	err := r.getExecutor().QueryRow(ctx, query, id).Scan(
 		&user.ID, &user.TenantID, &user.Name, &user.Email, &user.Phone, &user.PasswordHash,
@@ -121,6 +139,30 @@ func (r *pgAuthRepository) UpdateOTP(ctx context.Context, userID uuid.UUID, otp 
 	query := `UPDATE users SET otp = $1, otp_expires_at = $2, updated_at = NOW() WHERE id = $3`
 	_, err := r.getExecutor().Exec(ctx, query, otp, expiresAt, userID)
 	return err
+}
+
+func (r *pgAuthRepository) GetUsersByTenantID(ctx context.Context, tenantID uuid.UUID) ([]*models.User, error) {
+	query := `SELECT id, tenant_id, name, email, phone, password_hash, role, is_verified, otp, otp_expires_at, is_active, last_login, created_at, updated_at FROM users WHERE tenant_id = $1`
+	rows, err := r.getExecutor().Query(ctx, query, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*models.User
+	for rows.Next() {
+		var user models.User
+		err := rows.Scan(
+			&user.ID, &user.TenantID, &user.Name, &user.Email, &user.Phone, &user.PasswordHash,
+			&user.Role, &user.IsVerified, &user.OTP, &user.OTPExpiresAt, &user.IsActive,
+			&user.LastLogin, &user.CreatedAt, &user.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, &user)
+	}
+	return users, nil
 }
 
 func (r *pgAuthRepository) CreateSession(ctx context.Context, session *models.Session) error {

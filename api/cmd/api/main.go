@@ -13,10 +13,12 @@ import (
 	"github.com/aceextension/core/db"
 	"github.com/aceextension/core/logger"
 	"github.com/aceextension/identity/handler"
+	"github.com/aceextension/identity/middleware"
 	"github.com/aceextension/identity/repository"
 	"github.com/aceextension/identity/service"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 func main() {
@@ -40,11 +42,11 @@ func main() {
 	e := echo.New()
 
 	// Middleware
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+	e.Use(echoMiddleware.Logger())
+	e.Use(echoMiddleware.Recover())
+	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
 		AllowOrigins: []string{"*"},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 	}))
 
 	// Swagger Documentation
@@ -76,6 +78,13 @@ func main() {
 	auth.POST("/register", authHandler.RegisterTenant)
 	auth.POST("/verify-otp", authHandler.VerifyOTP)
 	auth.POST("/login", authHandler.Login)
+	auth.POST("/logout", authHandler.Logout, middleware.JWTMiddleware)
+	auth.POST("/refresh", authHandler.RefreshToken)
+	auth.POST("/change-password", authHandler.ChangePassword, middleware.JWTMiddleware)
+	auth.POST("/forgot-password", authHandler.ForgotPassword)
+	auth.POST("/reset-password", authHandler.ResetPassword)
+	auth.POST("/impersonate/:tenantId", authHandler.Impersonate, middleware.JWTMiddleware)
+	auth.GET("/me", authHandler.GetMe, middleware.JWTMiddleware)
 
 	// Start server
 	port := cfg.Port

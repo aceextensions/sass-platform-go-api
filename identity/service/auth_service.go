@@ -10,12 +10,20 @@ import (
 	"github.com/aceextension/identity/dto"
 	"github.com/aceextension/identity/models"
 	"github.com/aceextension/identity/repository"
+	"github.com/google/uuid"
 )
 
 type AuthService interface {
 	RegisterTenant(ctx context.Context, data dto.RegisterTenantDTO) (*dto.UserResponse, error)
 	VerifyOTP(ctx context.Context, data dto.VerifyOTPDTO) (*dto.AuthResponse, error)
 	Login(ctx context.Context, data dto.LoginDTO) (*dto.AuthResponse, error)
+	Logout(ctx context.Context, userID uuid.UUID, refreshToken string) error
+	RefreshToken(ctx context.Context, refreshToken string) (*dto.AuthResponse, error)
+	ChangePassword(ctx context.Context, userID uuid.UUID, oldPassword, newPassword string) error
+	ForgotPassword(ctx context.Context, data dto.ForgotPasswordDTO) error
+	ResetPassword(ctx context.Context, data dto.ResetPasswordDTO) error
+	Impersonate(ctx context.Context, tenantID uuid.UUID, adminUserID uuid.UUID) (*dto.AuthResponse, error)
+	GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserResponse, error)
 }
 
 type authService struct {
@@ -227,7 +235,180 @@ func (s *authService) Login(ctx context.Context, data dto.LoginDTO) (*dto.AuthRe
 	}, nil
 }
 
+func (s *authService) Logout(ctx context.Context, userID uuid.UUID, refreshToken string) error {
+	return s.authRepo.DeleteSession(ctx, userID, refreshToken)
+}
+
+func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*dto.AuthResponse, error) {
+	session, err := s.authRepo.GetSessionByToken(ctx, refreshToken)
+	if err != nil {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	if time.Now().After(session.ExpiresAt) {
+		_ = s.authRepo.DeleteSession(ctx, session.UserID, refreshToken)
+		return nil, errors.New("session expired")
+	}
+
+	user, err := s.authRepo.GetUserByID(ctx, session.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	payload := dto.TokenPayload{
+		UserID:   user.ID,
+		TenantID: user.TenantID,
+		Role:     user.Role,
+	}
+
+	newAccessToken, _ := GenerateAccessToken(payload)
+	newRefreshToken, _ := GenerateRefreshToken(payload)
+
+	// Replace old session with new one
+	_ = s.authRepo.DeleteSession(ctx, session.UserID, refreshToken)
+	newSession := models.Session{
+		UserID:       user.ID,
+		RefreshToken: newRefreshToken,
+		ExpiresAt:    time.Now().Add(7 * 24 * time.Hour),
+	}
+	_ = s.authRepo.CreateSession(ctx, &newSession)
+
+	return &dto.AuthResponse{
+		AccessToken:  newAccessToken,
+		RefreshToken: newRefreshToken,
+		User: dto.UserResponse{
+			ID:       user.ID,
+			Name:     user.Name,
+			Email:    user.Email,
+			Phone:    user.Phone,
+			Role:     user.Role,
+			TenantID: user.TenantID,
+		},
+	}, nil
+}
+
+func (s *authService) ChangePassword(ctx context.Context, userID uuid.UUID, oldPassword, newPassword string) error {
+	user, err := s.authRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	if user.PasswordHash == nil || !ComparePassword(oldPassword, *user.PasswordHash) {
+		return errors.New("invalid old password")
+	}
+
+	newHash, err := HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	return s.authRepo.UpdateUserPassword(ctx, userID, newHash)
+}
+
+func (s *authService) ForgotPassword(ctx context.Context, data dto.ForgotPasswordDTO) error {
+	user, err := s.authRepo.GetUserByIdentifier(ctx, data.Identifier)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	otp := "123456" // Default for dev
+	expiresAt := time.Now().Add(15 * time.Minute)
+
+	if err := s.authRepo.UpdateOTP(ctx, user.ID, &otp, &expiresAt); err != nil {
+		return err
+	}
+
+	fmt.Printf("📧 Password Reset OTP for %s: %s\n", data.Identifier, otp)
+	return nil
+}
+
+func (s *authService) ResetPassword(ctx context.Context, data dto.ResetPasswordDTO) error {
+	user, err := s.authRepo.GetUserByIdentifier(ctx, data.Identifier)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	if user.OTP == nil || *user.OTP != data.OTP {
+		return errors.New("invalid code")
+	}
+
+	if user.OTPExpiresAt != nil && time.Now().After(*user.OTPExpiresAt) {
+		return errors.New("code expired")
+	}
+
+	newHash, err := HashPassword(data.NewPassword)
+	if err != nil {
+		return err
+	}
+
+	return s.authRepo.WithTransaction(ctx, func(repo repository.AuthRepository) error {
+		if err := repo.UpdateUserPassword(ctx, user.ID, newHash); err != nil {
+			return err
+		}
+		// Clear OTP
+		return repo.UpdateOTP(ctx, user.ID, nil, nil)
+	})
+}
+
+func (s *authService) Impersonate(ctx context.Context, tenantID uuid.UUID, adminUserID uuid.UUID) (*dto.AuthResponse, error) {
+	// 1. Get owner user of the tenant
+	// Note: In a real app we'd find the primary owner. For now, get any owner.
+	users, err := s.authRepo.GetUsersByTenantID(ctx, tenantID)
+	if err != nil || len(users) == 0 {
+		return nil, errors.New("tenant user not found")
+	}
+
+	var targetUser *models.User
+	for _, u := range users {
+		if u.Role == "owner" {
+			targetUser = u
+			break
+		}
+	}
+	if targetUser == nil {
+		targetUser = users[0]
+	}
+
+	payload := dto.TokenPayload{
+		UserID:   targetUser.ID,
+		TenantID: targetUser.TenantID,
+		Role:     targetUser.Role,
+	}
+
+	accessToken, _ := GenerateAccessToken(payload)
+	refreshToken, _ := GenerateRefreshToken(payload)
+
+	return &dto.AuthResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		User: dto.UserResponse{
+			ID:       targetUser.ID,
+			Name:     targetUser.Name,
+			Email:    targetUser.Email,
+			Phone:    targetUser.Phone,
+			Role:     targetUser.Role,
+			TenantID: targetUser.TenantID,
+		},
+	}, nil
+}
+
+func (s *authService) GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserResponse, error) {
+	user, err := s.authRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	return &dto.UserResponse{
+		ID:       user.ID,
+		Name:     user.Name,
+		Email:    user.Email,
+		Phone:    user.Phone,
+		Role:     user.Role,
+		TenantID: user.TenantID,
+	}, nil
+}
+
 func generateRandomOTP() string {
-	rand.Seed(time.Now().UnixNano())
+	// ... existing implementation ...
 	return fmt.Sprintf("%06d", rand.Intn(1000000))
 }

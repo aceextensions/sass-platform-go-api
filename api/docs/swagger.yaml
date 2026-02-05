@@ -9,6 +9,24 @@ definitions:
       user:
         $ref: '#/definitions/github_com_aceextension_identity_dto.UserResponse'
     type: object
+  github_com_aceextension_identity_dto.ChangePasswordDTO:
+    properties:
+      newPassword:
+        minLength: 6
+        type: string
+      oldPassword:
+        type: string
+    required:
+    - newPassword
+    - oldPassword
+    type: object
+  github_com_aceextension_identity_dto.ForgotPasswordDTO:
+    properties:
+      identifier:
+        type: string
+    required:
+    - identifier
+    type: object
   github_com_aceextension_identity_dto.LoginDTO:
     properties:
       password:
@@ -18,6 +36,18 @@ definitions:
     required:
     - password
     - phone
+    type: object
+  github_com_aceextension_identity_dto.LogoutDTO:
+    properties:
+      refreshToken:
+        type: string
+    type: object
+  github_com_aceextension_identity_dto.RefreshTokenDTO:
+    properties:
+      refreshToken:
+        type: string
+    required:
+    - refreshToken
     type: object
   github_com_aceextension_identity_dto.RegisterTenantDTO:
     properties:
@@ -37,6 +67,20 @@ definitions:
     - password
     - phone
     - tenantName
+    type: object
+  github_com_aceextension_identity_dto.ResetPasswordDTO:
+    properties:
+      identifier:
+        type: string
+      newPassword:
+        minLength: 6
+        type: string
+      otp:
+        type: string
+    required:
+    - identifier
+    - newPassword
+    - otp
     type: object
   github_com_aceextension_identity_dto.UserResponse:
     properties:
@@ -70,6 +114,75 @@ info:
   title: AceExtension API
   version: "1.0"
 paths:
+  /auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: Change authenticated user password
+      parameters:
+      - description: Change Password Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_aceextension_identity_dto.ChangePasswordDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Change Password
+      tags:
+      - auth
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Request OTP for password reset
+      parameters:
+      - description: Forgot Password Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_aceextension_identity_dto.ForgotPasswordDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Forgot Password
+      tags:
+      - auth
+  /auth/impersonate/{tenantId}:
+    post:
+      consumes:
+      - application/json
+      description: Login as tenant owner (Super Admin only)
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: tenantId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_aceextension_identity_dto.AuthResponse'
+      summary: Impersonate Tenant
+      tags:
+      - auth
   /auth/login:
     post:
       consumes:
@@ -102,6 +215,73 @@ paths:
               type: string
             type: object
       summary: User Login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Invalidate the session
+      parameters:
+      - description: Logout Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_aceextension_identity_dto.LogoutDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User Logout
+      tags:
+      - auth
+  /auth/me:
+    get:
+      consumes:
+      - application/json
+      description: Get profile of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_aceextension_identity_dto.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Current User
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get a new access token using refresh token
+      parameters:
+      - description: Refresh Token Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_aceextension_identity_dto.RefreshTokenDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_aceextension_identity_dto.AuthResponse'
+      summary: Refresh Access Token
       tags:
       - auth
   /auth/register:
@@ -137,6 +317,30 @@ paths:
               type: string
             type: object
       summary: Register a new tenant
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Reset password with OTP
+      parameters:
+      - description: Reset Password Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_aceextension_identity_dto.ResetPasswordDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Reset Password
       tags:
       - auth
   /auth/verify-otp:

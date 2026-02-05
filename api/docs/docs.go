@@ -15,6 +15,112 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/change-password": {
+            "post": {
+                "description": "Change authenticated user password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Change Password",
+                "parameters": [
+                    {
+                        "description": "Change Password Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aceextension_identity_dto.ChangePasswordDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/forgot-password": {
+            "post": {
+                "description": "Request OTP for password reset",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Forgot Password",
+                "parameters": [
+                    {
+                        "description": "Forgot Password Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aceextension_identity_dto.ForgotPasswordDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/impersonate/{tenantId}": {
+            "post": {
+                "description": "Login as tenant owner (Super Admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Impersonate Tenant",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tenant ID",
+                        "name": "tenantId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aceextension_identity_dto.AuthResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Login with phone or email and password",
@@ -67,6 +173,109 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/logout": {
+            "post": {
+                "description": "Invalidate the session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User Logout",
+                "parameters": [
+                    {
+                        "description": "Logout Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aceextension_identity_dto.LogoutDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "description": "Get profile of the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get Current User",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aceextension_identity_dto.UserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Get a new access token using refresh token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh Access Token",
+                "parameters": [
+                    {
+                        "description": "Refresh Token Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aceextension_identity_dto.RefreshTokenDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aceextension_identity_dto.AuthResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/register": {
             "post": {
                 "description": "Create a new tenant and its administrative user",
@@ -110,6 +319,43 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/reset-password": {
+            "post": {
+                "description": "Reset password with OTP",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Reset Password",
+                "parameters": [
+                    {
+                        "description": "Reset Password Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aceextension_identity_dto.ResetPasswordDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -188,6 +434,33 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_aceextension_identity_dto.ChangePasswordDTO": {
+            "type": "object",
+            "required": [
+                "newPassword",
+                "oldPassword"
+            ],
+            "properties": {
+                "newPassword": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "oldPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_aceextension_identity_dto.ForgotPasswordDTO": {
+            "type": "object",
+            "required": [
+                "identifier"
+            ],
+            "properties": {
+                "identifier": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_aceextension_identity_dto.LoginDTO": {
             "type": "object",
             "required": [
@@ -199,6 +472,25 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_aceextension_identity_dto.LogoutDTO": {
+            "type": "object",
+            "properties": {
+                "refreshToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_aceextension_identity_dto.RefreshTokenDTO": {
+            "type": "object",
+            "required": [
+                "refreshToken"
+            ],
+            "properties": {
+                "refreshToken": {
                     "type": "string"
                 }
             }
@@ -226,6 +518,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tenantName": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_aceextension_identity_dto.ResetPasswordDTO": {
+            "type": "object",
+            "required": [
+                "identifier",
+                "newPassword",
+                "otp"
+            ],
+            "properties": {
+                "identifier": {
+                    "type": "string"
+                },
+                "newPassword": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "otp": {
                     "type": "string"
                 }
             }
