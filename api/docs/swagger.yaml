@@ -27,6 +27,40 @@ definitions:
     required:
     - identifier
     type: object
+  github_com_aceextension_identity_dto.InviteUserDTO:
+    properties:
+      email:
+        type: string
+      phone:
+        maxLength: 15
+        minLength: 10
+        type: string
+      role:
+        enum:
+        - owner
+        - manager
+        - staff
+        - admin
+        type: string
+    required:
+    - role
+    type: object
+  github_com_aceextension_identity_dto.JoinTenantDTO:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        minLength: 6
+        type: string
+      token:
+        type: string
+    required:
+    - name
+    - password
+    - token
+    type: object
   github_com_aceextension_identity_dto.LoginDTO:
     properties:
       password:
@@ -42,6 +76,17 @@ definitions:
       refreshToken:
         type: string
     type: object
+  github_com_aceextension_identity_dto.Pagination:
+    properties:
+      currentPage:
+        type: integer
+      limit:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
   github_com_aceextension_identity_dto.RefreshTokenDTO:
     properties:
       refreshToken:
@@ -54,13 +99,20 @@ definitions:
       email:
         type: string
       ownerName:
+        maxLength: 100
+        minLength: 2
         type: string
       password:
+        maxLength: 50
         minLength: 6
         type: string
       phone:
+        maxLength: 15
+        minLength: 10
         type: string
       tenantName:
+        maxLength: 50
+        minLength: 3
         type: string
     required:
     - ownerName
@@ -73,6 +125,7 @@ definitions:
       identifier:
         type: string
       newPassword:
+        maxLength: 50
         minLength: 6
         type: string
       otp:
@@ -82,12 +135,25 @@ definitions:
     - newPassword
     - otp
     type: object
+  github_com_aceextension_identity_dto.UserListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_aceextension_identity_dto.UserResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/github_com_aceextension_identity_dto.Pagination'
+    type: object
   github_com_aceextension_identity_dto.UserResponse:
     properties:
+      createdAt:
+        type: string
       email:
         type: string
       id:
         type: string
+      isActive:
+        type: boolean
       name:
         type: string
       phone:
@@ -377,4 +443,95 @@ paths:
       summary: Verify registration OTP
       tags:
       - auth
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Fetch users with advanced filtering, sorting and pagination
+      parameters:
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Field to sort by
+        in: query
+        name: sortBy
+        type: string
+      - description: Sort order (asc/desc)
+        in: query
+        name: sortOrder
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: JSON encoded filters
+        in: query
+        name: filters
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_aceextension_identity_dto.UserListResponse'
+      security:
+      - BearerAuth: []
+      summary: List tenant users
+      tags:
+      - users
+  /users/invite:
+    post:
+      consumes:
+      - application/json
+      description: Send an invitation to join the tenant
+      parameters:
+      - description: Invitation Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_aceextension_identity_dto.InviteUserDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Invite a new user
+      tags:
+      - users
+  /users/join:
+    post:
+      consumes:
+      - application/json
+      description: Accept invitation and create user account
+      parameters:
+      - description: Join Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_aceextension_identity_dto.JoinTenantDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Join tenant via invitation
+      tags:
+      - users
 swagger: "2.0"

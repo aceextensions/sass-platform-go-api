@@ -37,6 +37,10 @@ func (h *AuthHandler) RegisterTenant(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
 	res, err := h.authService.RegisterTenant(c.Request().Context(), req)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -65,6 +69,10 @@ func (h *AuthHandler) VerifyOTP(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
 	res, err := h.authService.VerifyOTP(c.Request().Context(), req)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
@@ -90,6 +98,10 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
 	res, err := h.authService.Login(c.Request().Context(), req)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
@@ -111,6 +123,10 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 	var req dto.LogoutDTO
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return err
 	}
 
 	userInterface := c.Get("user")
@@ -146,6 +162,10 @@ func (h *AuthHandler) ChangePassword(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
 	userInterface := c.Get("user")
 	if userInterface == nil {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
@@ -176,6 +196,10 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
 	res, err := h.authService.RefreshToken(c.Request().Context(), req.RefreshToken)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
@@ -199,6 +223,10 @@ func (h *AuthHandler) ForgotPassword(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
 	if err := h.authService.ForgotPassword(c.Request().Context(), req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
@@ -219,6 +247,10 @@ func (h *AuthHandler) ResetPassword(c echo.Context) error {
 	var req dto.ResetPasswordDTO
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return err
 	}
 
 	if err := h.authService.ResetPassword(c.Request().Context(), req); err != nil {

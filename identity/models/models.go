@@ -58,3 +58,16 @@ type Session struct {
 	ExpiresAt         time.Time `json:"expiresAt" db:"expires_at"`
 	CreatedAt         time.Time `json:"createdAt" db:"created_at"`
 }
+
+// Invitation represents the invitations table
+type Invitation struct {
+	ID        uuid.UUID `json:"id" db:"id"`
+	TenantID  uuid.UUID `json:"tenantId" db:"tenant_id"`
+	Email     *string   `json:"email" db:"email"`
+	Phone     *string   `json:"phone" db:"phone"`
+	Role      string    `json:"role" db:"role"`
+	Token     string    `json:"token" db:"token"`
+	ExpiresAt time.Time `json:"expiresAt" db:"expires_at"`
+	Status    string    `json:"status" db:"status"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
+}

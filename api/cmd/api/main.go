@@ -10,6 +10,7 @@ import (
 
 	_ "github.com/aceextension/api/docs"
 	"github.com/aceextension/core/apperrors"
+	"github.com/aceextension/core/appvalidator"
 	"github.com/aceextension/core/config"
 	"github.com/aceextension/core/db"
 	"github.com/aceextension/core/logger"
@@ -37,11 +38,17 @@ func main() {
 	// 4. Initialize Dependency Injection
 	authRepo := repository.NewAuthRepository()
 	tenantRepo := repository.NewTenantRepository()
+	userRepo := repository.NewUserRepository()
+
 	authService := service.NewAuthService(authRepo, tenantRepo)
+	userService := service.NewUserService(userRepo, tenantRepo, authRepo)
+
 	authHandler := handler.NewAuthHandler(authService)
+	userHandler := handler.NewUserHandler(userService)
 
 	e := echo.New()
 	e.HTTPErrorHandler = apperrors.GlobalErrorHandler
+	e.Validator = appvalidator.NewCustomValidator()
 
 	// Middleware
 	e.Use(echoMiddleware.Logger())
@@ -87,6 +94,12 @@ func main() {
 	auth.POST("/reset-password", authHandler.ResetPassword)
 	auth.POST("/impersonate/:tenantId", authHandler.Impersonate, middleware.JWTMiddleware)
 	auth.GET("/me", authHandler.GetMe, middleware.JWTMiddleware)
+
+	// User Management Routes
+	users := api.Group("/users", middleware.JWTMiddleware)
+	users.GET("", userHandler.ListUsers)
+	users.POST("/invite", userHandler.InviteUser)
+	users.POST("/join", userHandler.JoinTenant) // Join is public but with token
 
 	// Start server
 	port := cfg.Port
