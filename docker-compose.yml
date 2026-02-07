@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  api-go:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: aceextension-api-go
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: ${DATABASE_URL:-postgresql://aceextension:aceextension_dev@postgres:5432/aceextension}
+      AUDIT_DATABASE_URL: ${AUDIT_DATABASE_URL:-postgresql://aceextension:aceextension_audit@postgres-audit:5432/aceextension_audit}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
+      PORT: 4000
+      JWT_SECRET: ${JWT_SECRET:-supersecretjwtkey}
+    ports:
+      - "4000:4000"
+    volumes:
+      - .:/app
+    networks:
+      - aceextension-network
+
+networks:
+  aceextension-network:
+    external: true

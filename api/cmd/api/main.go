@@ -82,6 +82,17 @@ func main() {
 		})
 	})
 
+	api.GET("/config", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"config": map[string]interface{}{
+				"env":                cfg.Env,
+				"port":               cfg.Port,
+				"minioEndpoint":      cfg.MinioEndpoint,
+				"databaseConfigured": cfg.DatabaseURL != "",
+			},
+		})
+	})
+
 	// Auth Routes
 	auth := api.Group("/auth")
 	auth.POST("/register", authHandler.RegisterTenant)
