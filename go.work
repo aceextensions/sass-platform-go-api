@@ -7,5 +7,6 @@ use (
 	./audit
 	./common
 	./core
+	./fiscal
 	./identity
 )
