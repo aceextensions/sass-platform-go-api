@@ -4,6 +4,7 @@ toolchain go1.24.12
 
 use (
 	./api
+	./audit
 	./common
 	./core
 	./identity
