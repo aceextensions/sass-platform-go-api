@@ -173,6 +173,160 @@ definitions:
     - otp
     - phone
     type: object
+  handler.CreateCustomerRequest:
+    properties:
+      customAttributes:
+        additionalProperties: true
+        type: object
+      customerType:
+        enum:
+        - individual
+        - business
+        type: string
+      email:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      phone:
+        type: string
+    required:
+    - customerType
+    - name
+    type: object
+  handler.CreateSupplierRequest:
+    properties:
+      customAttributes:
+        additionalProperties: true
+        type: object
+      email:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      phone:
+        type: string
+      supplierType:
+        enum:
+        - local
+        - international
+        type: string
+    required:
+    - name
+    - supplierType
+    type: object
+  handler.CustomerResponse:
+    properties:
+      createdAt:
+        type: string
+      customAttributes:
+        additionalProperties: true
+        type: object
+      customerCode:
+        type: string
+      customerType:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      status:
+        type: string
+      tenantId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  handler.SupplierResponse:
+    properties:
+      createdAt:
+        type: string
+      customAttributes:
+        additionalProperties: true
+        type: object
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      status:
+        type: string
+      supplierCode:
+        type: string
+      supplierType:
+        type: string
+      tenantId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  handler.UpdateCustomerRequest:
+    properties:
+      customAttributes:
+        additionalProperties: true
+        type: object
+      customerType:
+        enum:
+        - individual
+        - business
+        type: string
+      email:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      phone:
+        type: string
+      status:
+        enum:
+        - active
+        - inactive
+        - blocked
+        type: string
+    required:
+    - customerType
+    - name
+    - status
+    type: object
+  handler.UpdateSupplierRequest:
+    properties:
+      customAttributes:
+        additionalProperties: true
+        type: object
+      email:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      phone:
+        type: string
+      status:
+        enum:
+        - active
+        - inactive
+        - blocked
+        type: string
+      supplierType:
+        enum:
+        - local
+        - international
+        type: string
+    required:
+    - name
+    - status
+    - supplierType
+    type: object
 host: localhost:4000
 info:
   contact: {}
@@ -180,6 +334,476 @@ info:
   title: AceExtension API
   version: "1.0"
 paths:
+  /api/v1/customers:
+    get:
+      description: Get a paginated list of customers for the current tenant
+      parameters:
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.CustomerResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List customers
+      tags:
+      - customers
+    post:
+      consumes:
+      - application/json
+      description: Create a new customer with custom attributes
+      parameters:
+      - description: Customer data
+        in: body
+        name: customer
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateCustomerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.CustomerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new customer
+      tags:
+      - customers
+  /api/v1/customers/{id}:
+    delete:
+      description: Delete a customer by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete customer
+      tags:
+      - customers
+    get:
+      description: Get a customer by their ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.CustomerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get customer by ID
+      tags:
+      - customers
+    put:
+      consumes:
+      - application/json
+      description: Update an existing customer
+      parameters:
+      - description: Customer ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Customer data
+        in: body
+        name: customer
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateCustomerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.CustomerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update customer
+      tags:
+      - customers
+  /api/v1/customers/search:
+    get:
+      description: Search customers by name, email, phone, or code
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.CustomerResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Search customers
+      tags:
+      - customers
+  /api/v1/suppliers:
+    get:
+      description: Get a paginated list of suppliers for the current tenant
+      parameters:
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.SupplierResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List suppliers
+      tags:
+      - suppliers
+    post:
+      consumes:
+      - application/json
+      description: Create a new supplier with custom attributes
+      parameters:
+      - description: Supplier data
+        in: body
+        name: supplier
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateSupplierRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.SupplierResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new supplier
+      tags:
+      - suppliers
+  /api/v1/suppliers/{id}:
+    delete:
+      description: Delete a supplier by ID
+      parameters:
+      - description: Supplier ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete supplier
+      tags:
+      - suppliers
+    get:
+      description: Get a supplier by their ID
+      parameters:
+      - description: Supplier ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.SupplierResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get supplier by ID
+      tags:
+      - suppliers
+    put:
+      consumes:
+      - application/json
+      description: Update an existing supplier
+      parameters:
+      - description: Supplier ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Supplier data
+        in: body
+        name: supplier
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateSupplierRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.SupplierResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update supplier
+      tags:
+      - suppliers
+  /api/v1/suppliers/search:
+    get:
+      description: Search suppliers by name, email, phone, or code
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.SupplierResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Search suppliers
+      tags:
+      - suppliers
   /auth/change-password:
     post:
       consumes:
