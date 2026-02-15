@@ -3,6 +3,9 @@ FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
+# Disable CGO
+ENV CGO_ENABLED=0
+
 # Install build dependencies
 RUN apk add --no-cache git
 
@@ -11,6 +14,8 @@ COPY go.work go.work.sum ./
 COPY common/go.mod common/go.sum ./common/
 COPY core/go.mod core/go.sum ./core/
 COPY identity/go.mod identity/go.sum ./identity/
+COPY notification/go.mod notification/go.sum ./notification/
+COPY subscription/go.mod subscription/go.sum ./subscription/
 COPY api/go.mod api/go.sum ./api/
 
 # Download dependencies
