@@ -21,6 +21,14 @@ import (
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
+
+	"context"
+	"time"
+
+	"github.com/aceextension/notification"
+	notificationHandler "github.com/aceextension/notification/handler"
+	"github.com/aceextension/subscription"
+	subscriptionHandler "github.com/aceextension/subscription/handler"
 )
 
 func main() {
@@ -111,6 +119,40 @@ func main() {
 	users.GET("", userHandler.ListUsers)
 	users.POST("/invite", userHandler.InviteUser)
 	users.POST("/join", userHandler.JoinTenant) // Join is public but with token
+
+	// 5. Initialize Notification Module & Worker
+	notification.Init()
+	// Register Notification Routes
+	notificationHandler.RegisterRoutes(e)
+
+	// Start Notification Worker
+	go func() {
+		logger.Log.Info("Starting Notification Worker...")
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			ctx := context.Background()
+			if err := notification.Service.ProcessPending(ctx); err != nil {
+				logger.Log.Error("Notification worker error: " + err.Error())
+			}
+		}
+	}()
+
+	// 6. Subscription Module
+	subscription.Init()
+	subPlanHandler := subscriptionHandler.NewPlanHandler(subscription.Service)
+	subHandler := subscriptionHandler.NewSubscriptionHandler(subscription.Service, authService)
+	// subv1 variable was unused, removed.
+	// Let's attach to api group directly
+
+	plans := api.Group("/v1/plans")
+	plans.POST("", subPlanHandler.Create, middleware.JWTMiddleware) // Admin only ideally
+	plans.GET("", subPlanHandler.List)
+
+	subs := api.Group("/v1/subscriptions")
+	subs.Use(middleware.JWTMiddleware)
+	subs.GET("/current", subHandler.GetCurrentSubscription)
+	subs.POST("/subscribe", subHandler.Subscribe)
 
 	// Start server
 	port := cfg.Port

@@ -173,6 +173,117 @@ definitions:
     - otp
     - phone
     type: object
+  github_com_aceextension_notification_domain.ChannelType:
+    enum:
+    - SMS
+    - EMAIL
+    - WHATSAPP
+    - IN_APP
+    type: string
+    x-enum-varnames:
+    - ChannelSMS
+    - ChannelEmail
+    - ChannelWhatsApp
+    - ChannelInApp
+  github_com_aceextension_notification_domain.Notification:
+    properties:
+      channel:
+        $ref: '#/definitions/github_com_aceextension_notification_domain.ChannelType'
+      content:
+        type: string
+      createdAt:
+        type: string
+      errorMessage:
+        type: string
+      id:
+        type: string
+      priority:
+        $ref: '#/definitions/github_com_aceextension_notification_domain.Priority'
+      recipient:
+        type: string
+      retryCount:
+        type: integer
+      sentAt:
+        type: string
+      status:
+        $ref: '#/definitions/github_com_aceextension_notification_domain.NotificationStatus'
+      subject:
+        type: string
+      templateId:
+        type: string
+      tenantId:
+        type: string
+      userId:
+        type: string
+    type: object
+  github_com_aceextension_notification_domain.NotificationStatus:
+    enum:
+    - PENDING
+    - PROCESSING
+    - SENT
+    - FAILED
+    type: string
+    x-enum-varnames:
+    - StatusPending
+    - StatusProcessing
+    - StatusSent
+    - StatusFailed
+  github_com_aceextension_notification_domain.Priority:
+    enum:
+    - HIGH
+    - LOW
+    type: string
+    x-enum-varnames:
+    - PriorityHigh
+    - PriorityLow
+  handler.CategoryResponse:
+    properties:
+      categoryCode:
+        type: string
+      createdAt:
+        type: string
+      customAttributes:
+        additionalProperties: true
+        type: object
+      description:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      level:
+        type: integer
+      name:
+        type: string
+      parentId:
+        type: string
+      path:
+        type: string
+      sortOrder:
+        type: integer
+      tenantId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  handler.CreateCategoryRequest:
+    properties:
+      customAttributes:
+        additionalProperties: true
+        type: object
+      description:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      parentId:
+        type: string
+      sortOrder:
+        type: integer
+    required:
+    - name
+    type: object
   handler.CreateCustomerRequest:
     properties:
       customAttributes:
@@ -194,6 +305,42 @@ definitions:
     required:
     - customerType
     - name
+    type: object
+  handler.CreateProductRequest:
+    properties:
+      barcode:
+        type: string
+      categoryId:
+        type: string
+      costPrice:
+        minimum: 0
+        type: number
+      customAttributes:
+        additionalProperties: true
+        type: object
+      description:
+        type: string
+      mrp:
+        type: number
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      sellingPrice:
+        type: number
+      sku:
+        type: string
+      taxRate:
+        maximum: 100
+        minimum: 0
+        type: number
+      unit:
+        type: string
+    required:
+    - categoryId
+    - name
+    - sellingPrice
+    - unit
     type: object
   handler.CreateSupplierRequest:
     properties:
@@ -243,6 +390,46 @@ definitions:
       updatedAt:
         type: string
     type: object
+  handler.ProductResponse:
+    properties:
+      barcode:
+        type: string
+      categoryId:
+        type: string
+      costPrice:
+        type: number
+      createdAt:
+        type: string
+      customAttributes:
+        additionalProperties: true
+        type: object
+      description:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      mrp:
+        type: number
+      name:
+        type: string
+      productCode:
+        type: string
+      sellingPrice:
+        type: number
+      sku:
+        type: string
+      status:
+        type: string
+      taxRate:
+        type: number
+      tenantId:
+        type: string
+      unit:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   handler.SupplierResponse:
     properties:
       createdAt:
@@ -268,6 +455,26 @@ definitions:
         type: string
       updatedAt:
         type: string
+    type: object
+  handler.UpdateCategoryRequest:
+    properties:
+      customAttributes:
+        additionalProperties: true
+        type: object
+      description:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      parentId:
+        type: string
+      sortOrder:
+        type: integer
+    required:
+    - name
     type: object
   handler.UpdateCustomerRequest:
     properties:
@@ -298,6 +505,49 @@ definitions:
     - name
     - status
     type: object
+  handler.UpdateProductRequest:
+    properties:
+      barcode:
+        type: string
+      categoryId:
+        type: string
+      costPrice:
+        minimum: 0
+        type: number
+      customAttributes:
+        additionalProperties: true
+        type: object
+      description:
+        type: string
+      mrp:
+        type: number
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      sellingPrice:
+        type: number
+      sku:
+        type: string
+      status:
+        enum:
+        - active
+        - inactive
+        - discontinued
+        type: string
+      taxRate:
+        maximum: 100
+        minimum: 0
+        type: number
+      unit:
+        type: string
+    required:
+    - categoryId
+    - name
+    - sellingPrice
+    - status
+    - unit
+    type: object
   handler.UpdateSupplierRequest:
     properties:
       customAttributes:
@@ -327,6 +577,101 @@ definitions:
     - status
     - supplierType
     type: object
+  notification_handler.CreateTemplateRequest:
+    properties:
+      body:
+        type: string
+      channel:
+        type: string
+      code:
+        type: string
+      subject:
+        type: string
+    required:
+    - body
+    - channel
+    - code
+    type: object
+  notification_handler.SendNotificationRequest:
+    properties:
+      channel:
+        type: string
+      content:
+        type: string
+      priority:
+        type: string
+      recipient:
+        type: string
+      templateId:
+        type: string
+      userId:
+        type: string
+      variables:
+        additionalProperties: true
+        type: object
+    required:
+    - channel
+    - recipient
+    type: object
+  notification_handler.TemplateResponse:
+    properties:
+      body:
+        type: string
+      channel:
+        type: string
+      code:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      subject:
+        type: string
+      tenantId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  subscription_handler.CreatePlanRequest:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      features:
+        additionalProperties:
+          type: boolean
+        type: object
+      interval:
+        enum:
+        - MONTHLY
+        - YEARLY
+        type: string
+      limits:
+        additionalProperties:
+          type: integer
+        type: object
+      name:
+        type: string
+      price:
+        minimum: 0
+        type: number
+    required:
+    - code
+    - name
+    type: object
+  subscription_handler.SubscribeRequest:
+    properties:
+      password:
+        type: string
+      planId:
+        type: string
+    required:
+    - password
+    - planId
+    type: object
 host: localhost:4000
 info:
   contact: {}
@@ -334,6 +679,255 @@ info:
   title: AceExtension API
   version: "1.0"
 paths:
+  /api/v1/categories:
+    get:
+      description: Get all categories for the tenant
+      parameters:
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.CategoryResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List categories
+      tags:
+      - categories
+    post:
+      consumes:
+      - application/json
+      description: Create a new product category
+      parameters:
+      - description: Category data
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.CategoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new category
+      tags:
+      - categories
+  /api/v1/categories/{id}:
+    delete:
+      description: Delete a category
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete category
+      tags:
+      - categories
+    get:
+      description: Get a specific category by ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.CategoryResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get category by ID
+      tags:
+      - categories
+    put:
+      consumes:
+      - application/json
+      description: Update an existing category
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Category data
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.CategoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update category
+      tags:
+      - categories
+  /api/v1/categories/{id}/children:
+    get:
+      description: Get all child categories of a parent
+      parameters:
+      - description: Parent Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.CategoryResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get child categories
+      tags:
+      - categories
+  /api/v1/categories/search:
+    get:
+      description: Search categories by name or description
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.CategoryResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Search categories
+      tags:
+      - categories
+  /api/v1/categories/tree:
+    get:
+      description: Get root categories (tree structure)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.CategoryResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get category tree
+      tags:
+      - categories
   /api/v1/customers:
     get:
       description: Get a paginated list of customers for the current tenant
@@ -569,6 +1163,511 @@ paths:
       summary: Search customers
       tags:
       - customers
+  /api/v1/notifications/queue:
+    get:
+      description: Get pending notifications in the queue
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_aceextension_notification_domain.Notification'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get notification queue
+      tags:
+      - notifications
+  /api/v1/notifications/send:
+    post:
+      consumes:
+      - application/json
+      description: Send a notification (instant or queued)
+      parameters:
+      - description: Notification Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/notification_handler.SendNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Send a notification
+      tags:
+      - notifications
+  /api/v1/notifications/templates:
+    get:
+      description: List all templates for tenant
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/notification_handler.TemplateResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List templates
+      tags:
+      - templates
+    post:
+      consumes:
+      - application/json
+      description: Create a new notification template
+      parameters:
+      - description: Template Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/notification_handler.CreateTemplateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a template
+      tags:
+      - templates
+  /api/v1/plans:
+    get:
+      description: List all available subscription plans
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List plans
+      tags:
+      - plans
+    post:
+      consumes:
+      - application/json
+      description: Create a new subscription plan (Admin)
+      parameters:
+      - description: Plan Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/subscription_handler.CreatePlanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a plan
+      tags:
+      - plans
+  /api/v1/products:
+    get:
+      description: Get all products for the tenant
+      parameters:
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.ProductResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List products
+      tags:
+      - products
+    post:
+      consumes:
+      - application/json
+      description: Create a new product
+      parameters:
+      - description: Product data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.ProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new product
+      tags:
+      - products
+  /api/v1/products/{id}:
+    delete:
+      description: Delete a product
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete product
+      tags:
+      - products
+    get:
+      description: Get a specific product by ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.ProductResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get product by ID
+      tags:
+      - products
+    put:
+      consumes:
+      - application/json
+      description: Update an existing product
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Product data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.ProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update product
+      tags:
+      - products
+  /api/v1/products/barcode/{barcode}:
+    get:
+      description: Get a product by barcode
+      parameters:
+      - description: Product Barcode
+        in: path
+        name: barcode
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.ProductResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get product by barcode
+      tags:
+      - products
+  /api/v1/products/category/{categoryId}:
+    get:
+      description: Get all products in a category
+      parameters:
+      - description: Category ID
+        in: path
+        name: categoryId
+        required: true
+        type: string
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.ProductResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get products by category
+      tags:
+      - products
+  /api/v1/products/search:
+    get:
+      description: Search products by name, SKU, or barcode
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.ProductResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Search products
+      tags:
+      - products
+  /api/v1/products/sku/{sku}:
+    get:
+      description: Get a product by SKU
+      parameters:
+      - description: Product SKU
+        in: path
+        name: sku
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.ProductResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get product by SKU
+      tags:
+      - products
+  /api/v1/subscriptions/current:
+    get:
+      description: Get usage and subscription details for the tenant
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current subscription
+      tags:
+      - subscriptions
+  /api/v1/subscriptions/subscribe:
+    post:
+      consumes:
+      - application/json
+      description: Upgrade or change subscription plan
+      parameters:
+      - description: Subscribe Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/subscription_handler.SubscribeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Subscribe to plan
+      tags:
+      - subscriptions
   /api/v1/suppliers:
     get:
       description: Get a paginated list of suppliers for the current tenant

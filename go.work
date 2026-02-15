@@ -3,11 +3,14 @@ go 1.24.0
 toolchain go1.24.12
 
 use (
+	./accounting
 	./api
 	./audit
+	./catalog
 	./common
 	./core
 	./crm
 	./fiscal
 	./identity
+	./notification
 )
