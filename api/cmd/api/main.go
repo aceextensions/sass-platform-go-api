@@ -6,7 +6,9 @@
 package main
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	_ "github.com/aceextension/api/docs"
 	"github.com/aceextension/core/apperrors"
@@ -18,17 +20,16 @@ import (
 	"github.com/aceextension/identity/middleware"
 	"github.com/aceextension/identity/repository"
 	"github.com/aceextension/identity/service"
-	"github.com/labstack/echo/v4"
-	echoMiddleware "github.com/labstack/echo/v4/middleware"
-	echoSwagger "github.com/swaggo/echo-swagger"
-
-	"context"
-	"time"
-
 	"github.com/aceextension/notification"
 	notificationHandler "github.com/aceextension/notification/handler"
 	"github.com/aceextension/subscription"
 	subscriptionHandler "github.com/aceextension/subscription/handler"
+	"github.com/labstack/echo/v4"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
+
+	"github.com/aceextension/accounting"
+	accountingHandler "github.com/aceextension/accounting/handler"
 )
 
 func main() {
@@ -153,6 +154,19 @@ func main() {
 	subs.Use(middleware.JWTMiddleware)
 	subs.GET("/current", subHandler.GetCurrentSubscription)
 	subs.POST("/subscribe", subHandler.Subscribe)
+
+	// 7. Accounting Module
+	accounting.Init()
+	accAccountHandler := accountingHandler.NewAccountHandler(accounting.Service)
+	accJournalHandler := accountingHandler.NewJournalHandler(accounting.Service)
+	accReportHandler := accountingHandler.NewReportHandler(accounting.Service)
+
+	accountingHandler.RegisterRoutes(
+		api.Group("/v1"), // Prefix /api/v1 handled in routes.go via group
+		accAccountHandler,
+		accJournalHandler,
+		accReportHandler,
+	)
 
 	// Start server
 	port := cfg.Port

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/aceextension/accounting/domain"
 	"github.com/aceextension/accounting/dto"
@@ -23,4 +24,8 @@ type AccountingService interface {
 
 	// Reports
 	GetLedger(ctx context.Context, tenantID, accountID uuid.UUID, startStr, endStr string) ([]*domain.LedgerEntry, error)
+	GetTrialBalance(ctx context.Context, tenantID, fiscalYearID uuid.UUID) (*dto.TrialBalanceResponse, error)
+	GetBalanceSheet(ctx context.Context, tenantID uuid.UUID, asOfDate time.Time) (*dto.BalanceSheetResponse, error)
+	GetProfitLoss(ctx context.Context, tenantID uuid.UUID, startDate, endDate time.Time) (*dto.ProfitLossResponse, error)
+	GetDayBook(ctx context.Context, tenantID uuid.UUID, date time.Time) (*dto.DayBookResponse, error)
 }

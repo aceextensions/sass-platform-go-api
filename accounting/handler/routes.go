@@ -21,4 +21,8 @@ func RegisterRoutes(e *echo.Group, accountHandler *AccountHandler, journalHandle
 
 	// Reports
 	accountingGroup.GET("/reports/general-ledger", reportHandler.GetGeneralLedger)
+	accountingGroup.GET("/reports/trial-balance", reportHandler.GetTrialBalance)
+	accountingGroup.GET("/reports/balance-sheet", reportHandler.GetBalanceSheet)
+	accountingGroup.GET("/reports/profit-loss", reportHandler.GetProfitLoss)
+	accountingGroup.GET("/reports/day-book", reportHandler.GetDayBook)
 }

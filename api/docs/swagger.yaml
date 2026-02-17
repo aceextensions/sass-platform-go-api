@@ -1,179 +1,48 @@
 basePath: /api
 definitions:
-  github_com_aceextension_identity_dto.AuthResponse:
+  domain.Account:
     properties:
-      accessToken:
+      code:
+        description: '"1001", "2000"'
         type: string
-      refreshToken:
-        type: string
-      user:
-        $ref: '#/definitions/github_com_aceextension_identity_dto.UserResponse'
-    type: object
-  github_com_aceextension_identity_dto.ChangePasswordDTO:
-    properties:
-      newPassword:
-        minLength: 6
-        type: string
-      oldPassword:
-        type: string
-    required:
-    - newPassword
-    - oldPassword
-    type: object
-  github_com_aceextension_identity_dto.ForgotPasswordDTO:
-    properties:
-      identifier:
-        type: string
-    required:
-    - identifier
-    type: object
-  github_com_aceextension_identity_dto.InviteUserDTO:
-    properties:
-      email:
-        type: string
-      phone:
-        maxLength: 15
-        minLength: 10
-        type: string
-      role:
-        enum:
-        - owner
-        - manager
-        - staff
-        - admin
-        type: string
-    required:
-    - role
-    type: object
-  github_com_aceextension_identity_dto.JoinTenantDTO:
-    properties:
-      name:
-        maxLength: 100
-        minLength: 2
-        type: string
-      password:
-        minLength: 6
-        type: string
-      token:
-        type: string
-    required:
-    - name
-    - password
-    - token
-    type: object
-  github_com_aceextension_identity_dto.LoginDTO:
-    properties:
-      password:
-        type: string
-      phone:
-        type: string
-    required:
-    - password
-    - phone
-    type: object
-  github_com_aceextension_identity_dto.LogoutDTO:
-    properties:
-      refreshToken:
-        type: string
-    type: object
-  github_com_aceextension_identity_dto.Pagination:
-    properties:
-      currentPage:
-        type: integer
-      limit:
-        type: integer
-      totalItems:
-        type: integer
-      totalPages:
-        type: integer
-    type: object
-  github_com_aceextension_identity_dto.RefreshTokenDTO:
-    properties:
-      refreshToken:
-        type: string
-    required:
-    - refreshToken
-    type: object
-  github_com_aceextension_identity_dto.RegisterTenantDTO:
-    properties:
-      email:
-        type: string
-      ownerName:
-        maxLength: 100
-        minLength: 2
-        type: string
-      password:
-        maxLength: 50
-        minLength: 6
-        type: string
-      phone:
-        maxLength: 15
-        minLength: 10
-        type: string
-      tenantName:
-        maxLength: 50
-        minLength: 3
-        type: string
-    required:
-    - ownerName
-    - password
-    - phone
-    - tenantName
-    type: object
-  github_com_aceextension_identity_dto.ResetPasswordDTO:
-    properties:
-      identifier:
-        type: string
-      newPassword:
-        maxLength: 50
-        minLength: 6
-        type: string
-      otp:
-        type: string
-    required:
-    - identifier
-    - newPassword
-    - otp
-    type: object
-  github_com_aceextension_identity_dto.UserListResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/github_com_aceextension_identity_dto.UserResponse'
-        type: array
-      pagination:
-        $ref: '#/definitions/github_com_aceextension_identity_dto.Pagination'
-    type: object
-  github_com_aceextension_identity_dto.UserResponse:
-    properties:
       createdAt:
         type: string
-      email:
+      description:
         type: string
       id:
         type: string
       isActive:
         type: boolean
       name:
+        description: '"Cash on Hand", "Sales Revenue"'
         type: string
-      phone:
-        type: string
-      role:
+      parentId:
+        description: For hierarchical CoA
         type: string
       tenantId:
         type: string
-    type: object
-  github_com_aceextension_identity_dto.VerifyOTPDTO:
-    properties:
-      otp:
+      type:
+        allOf:
+        - $ref: '#/definitions/domain.AccountType'
+        description: ASSET, LIABILITY, etc.
+      updatedAt:
         type: string
-      phone:
-        type: string
-    required:
-    - otp
-    - phone
     type: object
-  github_com_aceextension_notification_domain.ChannelType:
+  domain.AccountType:
+    enum:
+    - ASSET
+    - LIABILITY
+    - EQUITY
+    - REVENUE
+    - EXPENSE
+    type: string
+    x-enum-varnames:
+    - AccountTypeAsset
+    - AccountTypeLiability
+    - AccountTypeEquity
+    - AccountTypeRevenue
+    - AccountTypeExpense
+  domain.ChannelType:
     enum:
     - SMS
     - EMAIL
@@ -185,10 +54,90 @@ definitions:
     - ChannelEmail
     - ChannelWhatsApp
     - ChannelInApp
-  github_com_aceextension_notification_domain.Notification:
+  domain.JournalEntry:
+    properties:
+      createdAt:
+        type: string
+      createdByUserId:
+        type: string
+      description:
+        type: string
+      fiscalYearId:
+        type: string
+      id:
+        type: string
+      lines:
+        items:
+          $ref: '#/definitions/domain.JournalLine'
+        type: array
+      postedAt:
+        type: string
+      referenceId:
+        description: InvoiceID, PaymentID
+        type: string
+      referenceType:
+        description: '"INVOICE", "PAYMENT", "MANUAL"'
+        type: string
+      status:
+        $ref: '#/definitions/domain.JournalStatus'
+      tenantId:
+        type: string
+      transactionDate:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  domain.JournalLine:
+    properties:
+      accountId:
+        type: string
+      credit:
+        type: number
+      debit:
+        type: number
+      description:
+        type: string
+      id:
+        type: string
+      journalEntryId:
+        type: string
+    type: object
+  domain.JournalStatus:
+    enum:
+    - DRAFT
+    - POSTED
+    type: string
+    x-enum-varnames:
+    - JournalStatusDraft
+    - JournalStatusPosted
+  domain.LedgerEntry:
+    properties:
+      accountId:
+        type: string
+      credit:
+        type: number
+      debit:
+        type: number
+      description:
+        description: Journal Entry description
+        type: string
+      id:
+        type: string
+      journalEntryId:
+        type: string
+      lineDescription:
+        description: Line specific description
+        type: string
+      stepBalance:
+        description: Calculated during report generation
+        type: number
+      transactionDate:
+        type: string
+    type: object
+  domain.Notification:
     properties:
       channel:
-        $ref: '#/definitions/github_com_aceextension_notification_domain.ChannelType'
+        $ref: '#/definitions/domain.ChannelType'
       content:
         type: string
       createdAt:
@@ -198,7 +147,7 @@ definitions:
       id:
         type: string
       priority:
-        $ref: '#/definitions/github_com_aceextension_notification_domain.Priority'
+        $ref: '#/definitions/domain.Priority'
       recipient:
         type: string
       retryCount:
@@ -206,7 +155,7 @@ definitions:
       sentAt:
         type: string
       status:
-        $ref: '#/definitions/github_com_aceextension_notification_domain.NotificationStatus'
+        $ref: '#/definitions/domain.NotificationStatus'
       subject:
         type: string
       templateId:
@@ -216,7 +165,7 @@ definitions:
       userId:
         type: string
     type: object
-  github_com_aceextension_notification_domain.NotificationStatus:
+  domain.NotificationStatus:
     enum:
     - PENDING
     - PROCESSING
@@ -228,7 +177,7 @@ definitions:
     - StatusProcessing
     - StatusSent
     - StatusFailed
-  github_com_aceextension_notification_domain.Priority:
+  domain.Priority:
     enum:
     - HIGH
     - LOW
@@ -236,6 +185,192 @@ definitions:
     x-enum-varnames:
     - PriorityHigh
     - PriorityLow
+  dto.BalanceSheetResponse:
+    properties:
+      assets:
+        $ref: '#/definitions/dto.FinancialSection'
+      date:
+        type: string
+      equity:
+        $ref: '#/definitions/dto.FinancialSection'
+      liabilities:
+        $ref: '#/definitions/dto.FinancialSection'
+      netAssets:
+        description: Assets - Liabilities
+        type: number
+    type: object
+  dto.CreateAccountRequest:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      parentId:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/domain.AccountType'
+        enum:
+        - ASSET
+        - LIABILITY
+        - EQUITY
+        - REVENUE
+        - EXPENSE
+    required:
+    - code
+    - name
+    - type
+    type: object
+  dto.CreateJournalEntryRequest:
+    properties:
+      date:
+        type: string
+      description:
+        type: string
+      fiscalYearId:
+        type: string
+      lines:
+        items:
+          $ref: '#/definitions/dto.JournalLineRequest'
+        minItems: 2
+        type: array
+      referenceId:
+        type: string
+      referenceType:
+        type: string
+    required:
+    - date
+    - description
+    - fiscalYearId
+    - lines
+    type: object
+  dto.DayBookItem:
+    properties:
+      amount:
+        type: number
+      description:
+        type: string
+      journalId:
+        type: string
+      type:
+        description: SALES, PURCHASE, RECEIPT, PAYMENT
+        type: string
+    type: object
+  dto.DayBookResponse:
+    properties:
+      date:
+        type: string
+      totalCredits:
+        type: number
+      totalDebits:
+        type: number
+      transactions:
+        items:
+          $ref: '#/definitions/dto.DayBookItem'
+        type: array
+    type: object
+  dto.FinancialReportItem:
+    properties:
+      accountId:
+        type: string
+      accountName:
+        type: string
+      balance:
+        type: number
+      code:
+        type: string
+    type: object
+  dto.FinancialSection:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.FinancialReportItem'
+        type: array
+      name:
+        description: e.g., "Current Assets", "Revenue"
+        type: string
+      total:
+        type: number
+    type: object
+  dto.JournalLineRequest:
+    properties:
+      accountId:
+        type: string
+      credit:
+        minimum: 0
+        type: number
+      debit:
+        minimum: 0
+        type: number
+      description:
+        type: string
+    required:
+    - accountId
+    type: object
+  dto.ProfitLossResponse:
+    properties:
+      endDate:
+        type: string
+      expenses:
+        $ref: '#/definitions/dto.FinancialSection'
+      netProfit:
+        description: Revenue - Expenses
+        type: number
+      revenue:
+        $ref: '#/definitions/dto.FinancialSection'
+      startDate:
+        type: string
+    type: object
+  dto.TrialBalanceItem:
+    properties:
+      accountCode:
+        type: string
+      accountId:
+        type: string
+      accountName:
+        type: string
+      accountType:
+        type: string
+      balance:
+        description: Net balance (Debit - Credit)
+        type: number
+      credit:
+        type: number
+      debit:
+        type: number
+    type: object
+  dto.TrialBalanceResponse:
+    properties:
+      fiscalYearId:
+        type: string
+      generatedAt:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.TrialBalanceItem'
+        type: array
+      totalCredit:
+        type: number
+      totalDebit:
+        type: number
+    type: object
+  dto.UpdateAccountRequest:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        type: string
+      parentId:
+        type: string
+      type:
+        $ref: '#/definitions/domain.AccountType'
+    type: object
   handler.CategoryResponse:
     properties:
       categoryCode:
@@ -306,6 +441,34 @@ definitions:
     - customerType
     - name
     type: object
+  handler.CreatePlanRequest:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      features:
+        additionalProperties:
+          type: boolean
+        type: object
+      interval:
+        enum:
+        - MONTHLY
+        - YEARLY
+        type: string
+      limits:
+        additionalProperties:
+          type: integer
+        type: object
+      name:
+        type: string
+      price:
+        minimum: 0
+        type: number
+    required:
+    - code
+    - name
+    type: object
   handler.CreateProductRequest:
     properties:
       barcode:
@@ -363,6 +526,21 @@ definitions:
     required:
     - name
     - supplierType
+    type: object
+  handler.CreateTemplateRequest:
+    properties:
+      body:
+        type: string
+      channel:
+        type: string
+      code:
+        type: string
+      subject:
+        type: string
+    required:
+    - body
+    - channel
+    - code
     type: object
   handler.CustomerResponse:
     properties:
@@ -430,6 +608,37 @@ definitions:
       updatedAt:
         type: string
     type: object
+  handler.SendNotificationRequest:
+    properties:
+      channel:
+        type: string
+      content:
+        type: string
+      priority:
+        type: string
+      recipient:
+        type: string
+      templateId:
+        type: string
+      userId:
+        type: string
+      variables:
+        additionalProperties: true
+        type: object
+    required:
+    - channel
+    - recipient
+    type: object
+  handler.SubscribeRequest:
+    properties:
+      password:
+        type: string
+      planId:
+        type: string
+    required:
+    - password
+    - planId
+    type: object
   handler.SupplierResponse:
     properties:
       createdAt:
@@ -450,6 +659,27 @@ definitions:
       supplierCode:
         type: string
       supplierType:
+        type: string
+      tenantId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  handler.TemplateResponse:
+    properties:
+      body:
+        type: string
+      channel:
+        type: string
+      code:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      subject:
         type: string
       tenantId:
         type: string
@@ -577,101 +807,6 @@ definitions:
     - status
     - supplierType
     type: object
-  notification_handler.CreateTemplateRequest:
-    properties:
-      body:
-        type: string
-      channel:
-        type: string
-      code:
-        type: string
-      subject:
-        type: string
-    required:
-    - body
-    - channel
-    - code
-    type: object
-  notification_handler.SendNotificationRequest:
-    properties:
-      channel:
-        type: string
-      content:
-        type: string
-      priority:
-        type: string
-      recipient:
-        type: string
-      templateId:
-        type: string
-      userId:
-        type: string
-      variables:
-        additionalProperties: true
-        type: object
-    required:
-    - channel
-    - recipient
-    type: object
-  notification_handler.TemplateResponse:
-    properties:
-      body:
-        type: string
-      channel:
-        type: string
-      code:
-        type: string
-      createdAt:
-        type: string
-      id:
-        type: string
-      isActive:
-        type: boolean
-      subject:
-        type: string
-      tenantId:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  subscription_handler.CreatePlanRequest:
-    properties:
-      code:
-        type: string
-      description:
-        type: string
-      features:
-        additionalProperties:
-          type: boolean
-        type: object
-      interval:
-        enum:
-        - MONTHLY
-        - YEARLY
-        type: string
-      limits:
-        additionalProperties:
-          type: integer
-        type: object
-      name:
-        type: string
-      price:
-        minimum: 0
-        type: number
-    required:
-    - code
-    - name
-    type: object
-  subscription_handler.SubscribeRequest:
-    properties:
-      password:
-        type: string
-      planId:
-        type: string
-    required:
-    - password
-    - planId
-    type: object
 host: localhost:4000
 info:
   contact: {}
@@ -679,6 +814,433 @@ info:
   title: AceExtension API
   version: "1.0"
 paths:
+  /api/v1/accounting/accounts:
+    get:
+      description: List all accounts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Account'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List Accounts
+      tags:
+      - Accounting
+    post:
+      consumes:
+      - application/json
+      description: Create a new account
+      parameters:
+      - description: Account Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Account'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create Account
+      tags:
+      - Accounting
+  /api/v1/accounting/accounts/{id}:
+    get:
+      description: Get account by ID
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Account'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Account
+      tags:
+      - Accounting
+    put:
+      consumes:
+      - application/json
+      description: Update account details
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update Account
+      tags:
+      - Accounting
+  /api/v1/accounting/journals:
+    get:
+      description: List journal entries
+      parameters:
+      - description: Fiscal Year ID
+        in: query
+        name: fiscalYearId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.JournalEntry'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List Journal Entries
+      tags:
+      - Accounting
+    post:
+      consumes:
+      - application/json
+      description: Create a new manual journal entry
+      parameters:
+      - description: Journal Entry Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateJournalEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.JournalEntry'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create Journal Entry
+      tags:
+      - Accounting
+  /api/v1/accounting/journals/{id}:
+    get:
+      description: Get journal entry by ID
+      parameters:
+      - description: Journal Entry ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.JournalEntry'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Journal Entry
+      tags:
+      - Accounting
+  /api/v1/accounting/journals/{id}/post:
+    post:
+      description: Post/Finalize a journal entry
+      parameters:
+      - description: Journal Entry ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Post Journal Entry
+      tags:
+      - Accounting
+  /api/v1/accounting/reports/balance-sheet:
+    get:
+      description: Get balance sheet as of a specific date
+      parameters:
+      - description: As Of Date (YYYY-MM-DD)
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BalanceSheetResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Balance Sheet
+      tags:
+      - Accounting
+  /api/v1/accounting/reports/day-book:
+    get:
+      description: Get all transactions for a specific date
+      parameters:
+      - description: Date (YYYY-MM-DD)
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DayBookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Day Book
+      tags:
+      - Accounting
+  /api/v1/accounting/reports/general-ledger:
+    get:
+      description: Get general ledger entries for an account within a date range
+      parameters:
+      - description: Account ID
+        in: query
+        name: accountId
+        required: true
+        type: string
+      - description: Start Date (YYYY-MM-DD)
+        in: query
+        name: startDate
+        required: true
+        type: string
+      - description: End Date (YYYY-MM-DD)
+        in: query
+        name: endDate
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.LedgerEntry'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get General Ledger
+      tags:
+      - Accounting
+  /api/v1/accounting/reports/profit-loss:
+    get:
+      description: Get P&L for a date range
+      parameters:
+      - description: Start Date (YYYY-MM-DD)
+        in: query
+        name: startDate
+        required: true
+        type: string
+      - description: End Date (YYYY-MM-DD)
+        in: query
+        name: endDate
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProfitLossResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Profit and Loss
+      tags:
+      - Accounting
+  /api/v1/accounting/reports/trial-balance:
+    get:
+      description: Get full trial balance
+      parameters:
+      - description: Fiscal Year ID
+        in: query
+        name: fiscalYearId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TrialBalanceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Trial Balance
+      tags:
+      - Accounting
   /api/v1/categories:
     get:
       description: Get all categories for the tenant
@@ -1173,7 +1735,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_aceextension_notification_domain.Notification'
+              $ref: '#/definitions/domain.Notification'
             type: array
         "401":
           description: Unauthorized
@@ -1197,7 +1759,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/notification_handler.SendNotificationRequest'
+          $ref: '#/definitions/handler.SendNotificationRequest'
       produces:
       - application/json
       responses:
@@ -1228,7 +1790,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/notification_handler.TemplateResponse'
+              $ref: '#/definitions/handler.TemplateResponse'
             type: array
         "401":
           description: Unauthorized
@@ -1251,7 +1813,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/notification_handler.CreateTemplateRequest'
+          $ref: '#/definitions/handler.CreateTemplateRequest'
       produces:
       - application/json
       responses:
@@ -1304,7 +1866,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/subscription_handler.CreatePlanRequest'
+          $ref: '#/definitions/handler.CreatePlanRequest'
       produces:
       - application/json
       responses:
@@ -1648,7 +2210,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/subscription_handler.SubscribeRequest'
+          $ref: '#/definitions/handler.SubscribeRequest'
       produces:
       - application/json
       responses:
@@ -1903,358 +2465,4 @@ paths:
       summary: Search suppliers
       tags:
       - suppliers
-  /auth/change-password:
-    post:
-      consumes:
-      - application/json
-      description: Change authenticated user password
-      parameters:
-      - description: Change Password Data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_aceextension_identity_dto.ChangePasswordDTO'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Change Password
-      tags:
-      - auth
-  /auth/forgot-password:
-    post:
-      consumes:
-      - application/json
-      description: Request OTP for password reset
-      parameters:
-      - description: Forgot Password Data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_aceextension_identity_dto.ForgotPasswordDTO'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Forgot Password
-      tags:
-      - auth
-  /auth/impersonate/{tenantId}:
-    post:
-      consumes:
-      - application/json
-      description: Login as tenant owner (Super Admin only)
-      parameters:
-      - description: Tenant ID
-        in: path
-        name: tenantId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_aceextension_identity_dto.AuthResponse'
-      summary: Impersonate Tenant
-      tags:
-      - auth
-  /auth/login:
-    post:
-      consumes:
-      - application/json
-      description: Login with phone or email and password
-      parameters:
-      - description: Login Credentials
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_aceextension_identity_dto.LoginDTO'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_aceextension_identity_dto.AuthResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: User Login
-      tags:
-      - auth
-  /auth/logout:
-    post:
-      consumes:
-      - application/json
-      description: Invalidate the session
-      parameters:
-      - description: Logout Data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_aceextension_identity_dto.LogoutDTO'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: User Logout
-      tags:
-      - auth
-  /auth/me:
-    get:
-      consumes:
-      - application/json
-      description: Get profile of the authenticated user
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_aceextension_identity_dto.UserResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get Current User
-      tags:
-      - auth
-  /auth/refresh:
-    post:
-      consumes:
-      - application/json
-      description: Get a new access token using refresh token
-      parameters:
-      - description: Refresh Token Data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_aceextension_identity_dto.RefreshTokenDTO'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_aceextension_identity_dto.AuthResponse'
-      summary: Refresh Access Token
-      tags:
-      - auth
-  /auth/register:
-    post:
-      consumes:
-      - application/json
-      description: Create a new tenant and its administrative user
-      parameters:
-      - description: Tenant Registration Data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_aceextension_identity_dto.RegisterTenantDTO'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Register a new tenant
-      tags:
-      - auth
-  /auth/reset-password:
-    post:
-      consumes:
-      - application/json
-      description: Reset password with OTP
-      parameters:
-      - description: Reset Password Data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_aceextension_identity_dto.ResetPasswordDTO'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Reset Password
-      tags:
-      - auth
-  /auth/verify-otp:
-    post:
-      consumes:
-      - application/json
-      description: Verify the 6-digit OTP sent during registration
-      parameters:
-      - description: OTP Verification Data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_aceextension_identity_dto.VerifyOTPDTO'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_aceextension_identity_dto.AuthResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Verify registration OTP
-      tags:
-      - auth
-  /users:
-    get:
-      consumes:
-      - application/json
-      description: Fetch users with advanced filtering, sorting and pagination
-      parameters:
-      - description: Search term
-        in: query
-        name: search
-        type: string
-      - description: Field to sort by
-        in: query
-        name: sortBy
-        type: string
-      - description: Sort order (asc/desc)
-        in: query
-        name: sortOrder
-        type: string
-      - description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Items per page
-        in: query
-        name: limit
-        type: integer
-      - description: JSON encoded filters
-        in: query
-        name: filters
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_aceextension_identity_dto.UserListResponse'
-      security:
-      - BearerAuth: []
-      summary: List tenant users
-      tags:
-      - users
-  /users/invite:
-    post:
-      consumes:
-      - application/json
-      description: Send an invitation to join the tenant
-      parameters:
-      - description: Invitation Data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_aceextension_identity_dto.InviteUserDTO'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Invite a new user
-      tags:
-      - users
-  /users/join:
-    post:
-      consumes:
-      - application/json
-      description: Accept invitation and create user account
-      parameters:
-      - description: Join Data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_aceextension_identity_dto.JoinTenantDTO'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Join tenant via invitation
-      tags:
-      - users
 swagger: "2.0"

@@ -12,11 +12,16 @@ replace github.com/aceextension/notification => ../notification
 
 replace github.com/aceextension/subscription => ../subscription
 
+replace github.com/aceextension/accounting => ../accounting
+
+replace github.com/aceextension/fiscal => ../fiscal
+
 toolchain go1.24.12
 
 require (
-	github.com/aceextension/core v0.0.0-00010101000000-000000000000
-	github.com/aceextension/identity v0.0.0-00010101000000-000000000000
+	github.com/aceextension/accounting v0.0.0-00010101000000-000000000000
+	github.com/aceextension/core v0.0.0
+	github.com/aceextension/identity v0.0.0
 	github.com/aceextension/notification v0.0.0-00010101000000-000000000000
 	github.com/aceextension/subscription v0.0.0-00010101000000-000000000000
 	github.com/labstack/echo/v4 v4.15.0
@@ -28,6 +33,7 @@ require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
+	github.com/aceextension/fiscal v0.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect

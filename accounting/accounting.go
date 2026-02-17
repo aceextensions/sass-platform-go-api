@@ -17,7 +17,8 @@ func Init() {
 	log.Println("Initializing Accounting Module...")
 	repoAccount := repository.NewPostgresAccountRepository(db.MainPool)
 	repoJournal := repository.NewPostgresJournalRepository(db.MainPool)
+	repoReport := repository.NewPostgresReportRepository(db.MainPool)
 
-	Service = service.NewAccountingService(repoAccount, repoJournal, fiscal.Service)
+	Service = service.NewAccountingService(repoAccount, repoJournal, repoReport, fiscal.Service)
 	log.Println("Accounting Module Initialized")
 }
