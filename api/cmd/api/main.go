@@ -20,8 +20,15 @@ import (
 	"github.com/aceextension/identity/middleware"
 	"github.com/aceextension/identity/repository"
 	"github.com/aceextension/identity/service"
+	"github.com/aceextension/inventory"
+	inventoryHandler "github.com/aceextension/inventory/handler"
 	"github.com/aceextension/notification"
 	notificationHandler "github.com/aceextension/notification/handler"
+	"github.com/aceextension/purchase"
+	"github.com/aceextension/sales"
+	salesHandler "github.com/aceextension/sales/handler"
+	salesRepo "github.com/aceextension/sales/repository"
+	salesService "github.com/aceextension/sales/service"
 	"github.com/aceextension/subscription"
 	subscriptionHandler "github.com/aceextension/subscription/handler"
 	"github.com/labstack/echo/v4"
@@ -167,6 +174,32 @@ func main() {
 		accJournalHandler,
 		accReportHandler,
 	)
+
+	// 8. Inventory Module
+	inventory.Init()
+	// Warehouse Service is exposed in inventory package
+	warehouseHandler := inventoryHandler.NewWarehouseHandler(inventory.WarehouseService)
+	invHandler := inventoryHandler.NewInventoryHandler(inventory.Service)
+
+	inventoryHandler.RegisterRoutes(
+		api.Group("/v1"),
+		warehouseHandler,
+		invHandler,
+	)
+
+	// 9. Sales Module (Commerce)
+	sRepo := salesRepo.NewPostgresSalesRepository(db.MainPool)
+	sService := salesService.NewSalesService(sRepo, inventory.Service, accounting.Service)
+	sales.Init(sService) // Optional: set global
+	salesH := salesHandler.NewSalesHandler(sService)
+	salesHandler.RegisterRoutes(api.Group("/v1"), salesH)
+
+	// 10. Purchase Module (Commerce)
+	pRepo := purchaseRepo.NewPostgresPurchaseRepository(db.MainPool)
+	pService := purchaseService.NewPurchaseService(pRepo, inventory.Service, accounting.Service)
+	purchase.Init(pService)
+	purchaseH := purchaseHandler.NewPurchaseHandler(pService)
+	purchaseHandler.RegisterRoutes(api.Group("/v1"), purchaseH)
 
 	// Start server
 	port := cfg.Port

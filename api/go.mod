@@ -16,13 +16,20 @@ replace github.com/aceextension/accounting => ../accounting
 
 replace github.com/aceextension/fiscal => ../fiscal
 
-toolchain go1.24.12
+replace github.com/aceextension/inventory => ../inventory
+
+replace github.com/aceextension/sales => ../sales
+
+replace github.com/aceextension/purchase => ../purchase
 
 require (
-	github.com/aceextension/accounting v0.0.0-00010101000000-000000000000
+	github.com/aceextension/accounting v0.0.0
 	github.com/aceextension/core v0.0.0
 	github.com/aceextension/identity v0.0.0
+	github.com/aceextension/inventory v0.0.0
 	github.com/aceextension/notification v0.0.0-00010101000000-000000000000
+	github.com/aceextension/purchase v0.0.0-00010101000000-000000000000
+	github.com/aceextension/sales v0.0.0-00010101000000-000000000000
 	github.com/aceextension/subscription v0.0.0-00010101000000-000000000000
 	github.com/labstack/echo/v4 v4.15.0
 	github.com/swaggo/echo-swagger v1.4.1

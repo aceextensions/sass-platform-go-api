@@ -13,4 +13,7 @@ use (
 	./fiscal
 	./identity
 	./notification
+	./inventory
+	./sales
+	./purchase
 )
