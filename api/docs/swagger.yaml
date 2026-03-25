@@ -185,6 +185,37 @@ definitions:
     x-enum-varnames:
     - PriorityHigh
     - PriorityLow
+  domain.TransactionType:
+    enum:
+    - IN
+    - OUT
+    - TRANSFER
+    - ADJUSTMENT
+    type: string
+    x-enum-comments:
+      TransactionTypeAdjustment: Stock Take correction
+      TransactionTypeIn: Purchase, Return In
+      TransactionTypeOut: Sales, Return Out, Damage
+      TransactionTypeTransfer: Warehouse to Warehouse
+    x-enum-descriptions:
+    - Purchase, Return In
+    - Sales, Return Out, Damage
+    - Warehouse to Warehouse
+    - Stock Take correction
+    x-enum-varnames:
+    - TransactionTypeIn
+    - TransactionTypeOut
+    - TransactionTypeTransfer
+    - TransactionTypeAdjustment
+  dto.AuthResponse:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserResponse'
+    type: object
   dto.BalanceSheetResponse:
     properties:
       assets:
@@ -198,6 +229,17 @@ definitions:
       netAssets:
         description: Assets - Liabilities
         type: number
+    type: object
+  dto.ChangePasswordDTO:
+    properties:
+      newPassword:
+        minLength: 6
+        type: string
+      oldPassword:
+        type: string
+    required:
+    - newPassword
+    - oldPassword
     type: object
   dto.CreateAccountRequest:
     properties:
@@ -294,6 +336,62 @@ definitions:
       total:
         type: number
     type: object
+  dto.ForgotPasswordDTO:
+    properties:
+      identifier:
+        type: string
+    required:
+    - identifier
+    type: object
+  dto.InventoryItemResponse:
+    properties:
+      id:
+        type: string
+      lastRestocked:
+        type: string
+      productId:
+        type: string
+      quantity:
+        type: number
+      reorderLevel:
+        type: number
+      warehouseId:
+        type: string
+    type: object
+  dto.InviteUserDTO:
+    properties:
+      email:
+        type: string
+      phone:
+        maxLength: 15
+        minLength: 10
+        type: string
+      role:
+        enum:
+        - owner
+        - manager
+        - staff
+        - admin
+        type: string
+    required:
+    - role
+    type: object
+  dto.JoinTenantDTO:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        minLength: 6
+        type: string
+      token:
+        type: string
+    required:
+    - name
+    - password
+    - token
+    type: object
   dto.JournalLineRequest:
     properties:
       accountId:
@@ -309,6 +407,32 @@ definitions:
     required:
     - accountId
     type: object
+  dto.LoginDTO:
+    properties:
+      password:
+        type: string
+      phone:
+        type: string
+    required:
+    - password
+    - phone
+    type: object
+  dto.LogoutDTO:
+    properties:
+      refreshToken:
+        type: string
+    type: object
+  dto.Pagination:
+    properties:
+      currentPage:
+        type: integer
+      limit:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
   dto.ProfitLossResponse:
     properties:
       endDate:
@@ -321,6 +445,79 @@ definitions:
       revenue:
         $ref: '#/definitions/dto.FinancialSection'
       startDate:
+        type: string
+    type: object
+  dto.RefreshTokenDTO:
+    properties:
+      refreshToken:
+        type: string
+    required:
+    - refreshToken
+    type: object
+  dto.RegisterTenantDTO:
+    properties:
+      email:
+        type: string
+      ownerName:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        maxLength: 50
+        minLength: 6
+        type: string
+      phone:
+        maxLength: 15
+        minLength: 10
+        type: string
+      tenantName:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - ownerName
+    - password
+    - phone
+    - tenantName
+    type: object
+  dto.ResetPasswordDTO:
+    properties:
+      identifier:
+        type: string
+      newPassword:
+        maxLength: 50
+        minLength: 6
+        type: string
+      otp:
+        type: string
+    required:
+    - identifier
+    - newPassword
+    - otp
+    type: object
+  dto.StockTransactionResponse:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      direction:
+        type: integer
+      id:
+        type: string
+      notes:
+        type: string
+      productId:
+        type: string
+      quantity:
+        type: number
+      referenceId:
+        type: string
+      referenceType:
+        type: string
+      type:
+        $ref: '#/definitions/domain.TransactionType'
+      warehouseId:
         type: string
     type: object
   dto.TrialBalanceItem:
@@ -370,6 +567,59 @@ definitions:
         type: string
       type:
         $ref: '#/definitions/domain.AccountType'
+    type: object
+  dto.UserListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.UserResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.Pagination'
+    type: object
+  dto.UserResponse:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        type: string
+      phone:
+        type: string
+      role:
+        type: string
+      tenantId:
+        type: string
+    type: object
+  dto.VerifyOTPDTO:
+    properties:
+      otp:
+        type: string
+      phone:
+        type: string
+    required:
+    - otp
+    - phone
+    type: object
+  dto.WarehouseResponse:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      location:
+        type: string
+      name:
+        type: string
+      tenantId:
+        type: string
     type: object
   handler.CategoryResponse:
     properties:
@@ -1725,6 +1975,101 @@ paths:
       summary: Search customers
       tags:
       - customers
+  /api/v1/inventory/adjustments:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Adjust Stock
+      tags:
+      - Inventory
+  /api/v1/inventory/stock:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.InventoryItemResponse'
+      summary: Get Stock Level
+      tags:
+      - Inventory
+  /api/v1/inventory/transactions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.StockTransactionResponse'
+            type: array
+      summary: Get Stock Transactions
+      tags:
+      - Inventory
+  /api/v1/inventory/warehouses:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.WarehouseResponse'
+            type: array
+      summary: List Warehouses
+      tags:
+      - Inventory
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.WarehouseResponse'
+      summary: Create Warehouse
+      tags:
+      - Inventory
+  /api/v1/inventory/warehouses/{id}:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.WarehouseResponse'
+      summary: Get Warehouse
+      tags:
+      - Inventory
+  /api/v1/inventory/warehouses/{id}/stock:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.InventoryItemResponse'
+            type: array
+      summary: Get Warehouse Stock
+      tags:
+      - Inventory
   /api/v1/notifications/queue:
     get:
       description: Get pending notifications in the queue
@@ -2465,4 +2810,358 @@ paths:
       summary: Search suppliers
       tags:
       - suppliers
+  /auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: Change authenticated user password
+      parameters:
+      - description: Change Password Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChangePasswordDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Change Password
+      tags:
+      - auth
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Request OTP for password reset
+      parameters:
+      - description: Forgot Password Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ForgotPasswordDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Forgot Password
+      tags:
+      - auth
+  /auth/impersonate/{tenantId}:
+    post:
+      consumes:
+      - application/json
+      description: Login as tenant owner (Super Admin only)
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: tenantId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+      summary: Impersonate Tenant
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with phone or email and password
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User Login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Invalidate the session
+      parameters:
+      - description: Logout Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LogoutDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User Logout
+      tags:
+      - auth
+  /auth/me:
+    get:
+      consumes:
+      - application/json
+      description: Get profile of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Current User
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get a new access token using refresh token
+      parameters:
+      - description: Refresh Token Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+      summary: Refresh Access Token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new tenant and its administrative user
+      parameters:
+      - description: Tenant Registration Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterTenantDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new tenant
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Reset password with OTP
+      parameters:
+      - description: Reset Password Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ResetPasswordDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Reset Password
+      tags:
+      - auth
+  /auth/verify-otp:
+    post:
+      consumes:
+      - application/json
+      description: Verify the 6-digit OTP sent during registration
+      parameters:
+      - description: OTP Verification Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VerifyOTPDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Verify registration OTP
+      tags:
+      - auth
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Fetch users with advanced filtering, sorting and pagination
+      parameters:
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Field to sort by
+        in: query
+        name: sortBy
+        type: string
+      - description: Sort order (asc/desc)
+        in: query
+        name: sortOrder
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: JSON encoded filters
+        in: query
+        name: filters
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserListResponse'
+      security:
+      - BearerAuth: []
+      summary: List tenant users
+      tags:
+      - users
+  /users/invite:
+    post:
+      consumes:
+      - application/json
+      description: Send an invitation to join the tenant
+      parameters:
+      - description: Invitation Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.InviteUserDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Invite a new user
+      tags:
+      - users
+  /users/join:
+    post:
+      consumes:
+      - application/json
+      description: Accept invitation and create user account
+      parameters:
+      - description: Join Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.JoinTenantDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Join tenant via invitation
+      tags:
+      - users
 swagger: "2.0"

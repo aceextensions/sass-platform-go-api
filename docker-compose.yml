@@ -15,7 +15,7 @@ services:
       PORT: 4000
       JWT_SECRET: ${JWT_SECRET:-supersecretjwtkey}
     ports:
-      - "4000:4000"
+      - "5000:4000"
     volumes:
       - .:/app
     networks:

@@ -1,0 +1,20 @@
+🚀 Connected to Main Database
+🚀 Connected to Audit Database
+2026/03/23 14:47:03 Initializing Accounting Module...
+2026/03/23 14:47:03 Accounting Module Initialized
+2026-03-23T14:47:03.151+0545	[34mINFO[0m	api/main.go:148	Starting Notification Worker...
+2026/03/23 14:47:03 Successfully seeded quiz questions from /Users/durga/Project/my-project/go-rag/document/docker-question/exam.json
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.15.0
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+⇨ http server started on [::]:8089
+{"time":"2026-03-23T14:47:16.796527+05:45","id":"","remote_ip":"::1","host":"localhost:8089","method":"GET","uri":"/api/v1/quiz/subjects","user_agent":"curl/8.7.1","status":200,"error":"","latency":1283283,"latency_human":"1.283283ms","bytes_in":0,"bytes_out":316}
+{"time":"2026-03-23T14:57:37.828766+05:45","id":"","remote_ip":"::1","host":"localhost:8089","method":"GET","uri":"/api/v1/quiz/subjects","user_agent":"curl/8.7.1","status":200,"error":"","latency":1890383,"latency_human":"1.890383ms","bytes_in":0,"bytes_out":316}
+{"time":"2026-03-23T14:58:00.627421+05:45","id":"","remote_ip":"::1","host":"localhost:8089","method":"GET","uri":"/api/v1/quiz/questions?limit=2","user_agent":"curl/8.7.1","status":200,"error":"","latency":18332872,"latency_human":"18.332872ms","bytes_in":0,"bytes_out":2929}
+{"time":"2026-03-23T14:58:28.549972+05:45","id":"","remote_ip":"::1","host":"localhost:8089","method":"POST","uri":"/api/v1/quiz/mock","user_agent":"curl/8.7.1","status":200,"error":"","latency":116796269,"latency_human":"116.796269ms","bytes_in":35,"bytes_out":1331}

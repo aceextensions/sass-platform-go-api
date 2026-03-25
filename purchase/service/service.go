@@ -117,6 +117,7 @@ func (s *purchaseService) CreateBill(ctx context.Context, tenantID, userID uuid.
 	}
 
 	// s.accountingService.CreateJournalEntry(ctx, tenantID, userID, journalReq)
+	_ = journalReq
 
 	return bill, nil
 }

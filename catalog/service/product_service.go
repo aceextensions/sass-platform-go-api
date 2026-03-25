@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/aceextension/catalog/domain"
 	"github.com/aceextension/catalog/repository"
-	"github.com/aceextension/fiscal"
 	"github.com/google/uuid"
 )
 
@@ -30,13 +30,9 @@ func (s *productService) Create(ctx context.Context, product *domain.Product) er
 		return fmt.Errorf("failed to get next product number: %w", err)
 	}
 
-	// Get fiscal year for code generation
-	fiscalYear := fiscal.GetActiveFiscalYear(ctx, product.TenantID)
-	if fiscalYear != nil {
-		product.ProductCode = fmt.Sprintf("PROD-%s-%04d", fiscalYear.Code, nextNum)
-	} else {
-		product.ProductCode = fmt.Sprintf("PROD-%04d", nextNum)
-	}
+	// Generate product code using current year
+	yearCode := time.Now().Format("2006")
+	product.ProductCode = fmt.Sprintf("PROD-%s-%04d", yearCode, nextNum)
 
 	// Create product
 	if err := s.repo.Create(ctx, product); err != nil {

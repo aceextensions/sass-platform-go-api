@@ -11,11 +11,14 @@ import (
 	"time"
 
 	_ "github.com/aceextension/api/docs"
+	"github.com/aceextension/catalog"
+	catalogHandler "github.com/aceextension/catalog/handler"
 	"github.com/aceextension/core/apperrors"
 	"github.com/aceextension/core/appvalidator"
 	"github.com/aceextension/core/config"
 	"github.com/aceextension/core/db"
 	"github.com/aceextension/core/logger"
+	coreMiddleware "github.com/aceextension/core/middleware"
 	"github.com/aceextension/identity/handler"
 	"github.com/aceextension/identity/middleware"
 	"github.com/aceextension/identity/repository"
@@ -37,6 +40,13 @@ import (
 
 	"github.com/aceextension/accounting"
 	accountingHandler "github.com/aceextension/accounting/handler"
+
+	purchaseHandler "github.com/aceextension/purchase/handler"
+	purchaseRepo "github.com/aceextension/purchase/repository"
+	purchaseService "github.com/aceextension/purchase/service"
+
+	"github.com/aceextension/quiz"
+	quizHandler "github.com/aceextension/quiz/handler"
 )
 
 func main() {
@@ -187,6 +197,11 @@ func main() {
 		invHandler,
 	)
 
+	// 8b. Catalog Module
+	catalog.Init()
+	catalogGate := api.Group("", middleware.JWTMiddleware, coreMiddleware.TenantMiddleware)
+	catalogHandler.RegisterRoutes(catalogGate)
+
 	// 9. Sales Module (Commerce)
 	sRepo := salesRepo.NewPostgresSalesRepository(db.MainPool)
 	sService := salesService.NewSalesService(sRepo, inventory.Service, accounting.Service)
@@ -200,6 +215,11 @@ func main() {
 	purchase.Init(pService)
 	purchaseH := purchaseHandler.NewPurchaseHandler(pService)
 	purchaseHandler.RegisterRoutes(api.Group("/v1"), purchaseH)
+
+	// 11. Quiz Module
+	quiz.Init("")
+	quizH := quizHandler.NewQuizHandler(quiz.Service)
+	quizHandler.RegisterRoutes(api.Group("/v1"), quizH)
 
 	// Start server
 	port := cfg.Port

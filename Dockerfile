@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25.6-alpine AS builder
 
 WORKDIR /app
 
@@ -25,7 +25,7 @@ RUN go work sync
 COPY . .
 
 # Build the application
-RUN go build -o /app/api-bin ./api/cmd/api/main.go
+RUN go build -buildvcs=false -o /app/api-bin ./api/cmd/api/main.go
 
 # Production stage
 FROM alpine:latest AS production
@@ -48,7 +48,7 @@ EXPOSE 3001
 CMD ["/app/api"]
 
 # Development stage
-FROM golang:1.24-alpine AS development
+FROM golang:1.25.6-alpine AS development
 
 WORKDIR /app
 

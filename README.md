@@ -64,6 +64,24 @@ Then sync the workspace from the root:
 go work sync
 ```
 
+## 🛠️ Management CLI
+
+We have a dedicated CLI tool for system-level administrative tasks, such as creating initial superusers.
+
+### Create Superuser
+From the `sass-platform-go-api` directory:
+
+```bash
+go run ./api/cmd/mgmt/main.go -email "admin@example.com" -password "yourpassword" -name "Admin Name"
+```
+
+**Available Flags:**
+- `-email`: User's email (**Required**)
+- `-password`: User's password (**Required**)
+- `-name`: User's full name (Default: "System Admin")
+- `-phone`: User's phone number
+- `-role`: User's role (Default: "superadmin")
+
 ## 🔒 Security & Auth
 - **JWT**: Stateless authentication using RSA/HMAC.
 - **RBAC**: Role-based access control middleware implemented in the `identity` module.

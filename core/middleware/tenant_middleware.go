@@ -14,16 +14,34 @@ func TenantMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Try to extract tenant ID from multiple sources
 
-		// 1. From JWT claims (if authenticated)
+		// 0. From context (set by previous middleware like JWTMiddleware)
+		if tidVal := c.Get("tenant_id"); tidVal != nil {
+			var tid uuid.UUID
+			var err error
+
+			switch v := tidVal.(type) {
+			case uuid.UUID:
+				tid = v
+			case string:
+				if v != "" {
+					tid, err = uuid.Parse(v)
+				}
+			}
+
+			if err == nil && tid != uuid.Nil {
+				c.Set("tenant_id", tid) // Ensure it's a UUID in echo context
+				ctx := db.WithTenantID(c.Request().Context(), tid)
+				c.SetRequest(c.Request().WithContext(ctx))
+				return next(c)
+			}
+		}
+
+		// 1. From JWT claims (if authenticated and not in context)
 		tenantID, err := extractTenantFromJWT(c)
 		if err == nil && tenantID != uuid.Nil {
-			// Add to Echo context
 			c.Set("tenant_id", tenantID)
-
-			// Add to request context
 			ctx := db.WithTenantID(c.Request().Context(), tenantID)
 			c.SetRequest(c.Request().WithContext(ctx))
-
 			return next(c)
 		}
 
@@ -92,16 +110,36 @@ func extractTenantFromJWT(c echo.Context) (uuid.UUID, error) {
 		return uuid.Nil, echo.NewHTTPError(http.StatusUnauthorized, "User not found")
 	}
 
-	// Extract tenant ID from user claims
-	// This assumes your JWT has a "tenant_id" claim
-	claims, ok := user.(map[string]interface{})
-	if !ok {
-		return uuid.Nil, echo.NewHTTPError(http.StatusUnauthorized, "Invalid user claims")
+	var tenantIDStr string
+
+	// Handle map claims (standard for some JWT libraries)
+	if claims, ok := user.(map[string]interface{}); ok {
+		if tid, ok := claims["tenantId"].(string); ok {
+			tenantIDStr = tid
+		} else if tid, ok := claims["tenant_id"].(string); ok {
+			tenantIDStr = tid
+		}
+	} else {
+		// Handle struct (like identity.AuthUser) using reflection or type switch if we can't import
+		// Since we want to keep core independent, we can try to get it as a string from a known "TenantID" or "tenant_id" field
+		// However, a simple type switch for the most common case in this repo is better if we are sure it won't cause circular imports
+
+		// For now, let's use a more robust way to handle the struct without importing the pakcage
+		// We'll try to use a "duck typing" approach or just check if it's the expected struct
+		// Since we know the struct structure, we can use a type assertion to an interface
+		type tenantContainer interface {
+			GetTenantID() string
+		}
+
+		// If the struct doesn't have a getter, we might need a different approach.
+		// Let's check how AuthUser is defined - it's a simple struct with public fields.
+
+		// Actually, let's just make identity middleware set the tenant ID directly in the context
+		// that would be much cleaner.
 	}
 
-	tenantIDStr, ok := claims["tenant_id"].(string)
-	if !ok || tenantIDStr == "" {
-		return uuid.Nil, echo.NewHTTPError(http.StatusUnauthorized, "Tenant ID not found in claims")
+	if tenantIDStr == "" {
+		return uuid.Nil, echo.NewHTTPError(http.StatusUnauthorized, "Tenant ID not found in user context")
 	}
 
 	tenantID, err := uuid.Parse(tenantIDStr)

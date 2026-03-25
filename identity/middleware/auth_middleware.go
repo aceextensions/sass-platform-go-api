@@ -54,6 +54,9 @@ func JWTMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		c.Set("user", user)
+		if user.TenantID != "" {
+			c.Set("tenant_id", user.TenantID)
+		}
 		return next(c)
 	}
 }

@@ -22,6 +22,8 @@ replace github.com/aceextension/sales => ../sales
 
 replace github.com/aceextension/purchase => ../purchase
 
+replace github.com/aceextension/quiz => ../quiz
+
 require (
 	github.com/aceextension/accounting v0.0.0
 	github.com/aceextension/core v0.0.0
@@ -31,6 +33,7 @@ require (
 	github.com/aceextension/purchase v0.0.0-00010101000000-000000000000
 	github.com/aceextension/sales v0.0.0-00010101000000-000000000000
 	github.com/aceextension/subscription v0.0.0-00010101000000-000000000000
+	github.com/aceextension/quiz v0.0.0
 	github.com/labstack/echo/v4 v4.15.0
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.4

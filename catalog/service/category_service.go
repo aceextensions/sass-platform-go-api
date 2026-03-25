@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/aceextension/catalog/domain"
 	"github.com/aceextension/catalog/repository"
-	"github.com/aceextension/fiscal"
 	"github.com/google/uuid"
 )
 
@@ -30,13 +30,9 @@ func (s *categoryService) Create(ctx context.Context, category *domain.Category)
 		return fmt.Errorf("failed to get next category number: %w", err)
 	}
 
-	// Get fiscal year for code generation
-	fiscalYear := fiscal.GetActiveFiscalYear(ctx, category.TenantID)
-	if fiscalYear != nil {
-		category.CategoryCode = fmt.Sprintf("CAT-%s-%04d", fiscalYear.Code, nextNum)
-	} else {
-		category.CategoryCode = fmt.Sprintf("CAT-%04d", nextNum)
-	}
+	// Generate category code using current year
+	yearCode := time.Now().Format("2006")
+	category.CategoryCode = fmt.Sprintf("CAT-%s-%04d", yearCode, nextNum)
 
 	// Set path if root category
 	if category.ParentID == nil {
