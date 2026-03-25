@@ -50,21 +50,22 @@ func (r *pgUserRepository) getExecutor() db.QueryExecutor {
 }
 
 func (r *pgUserRepository) ListUsers(ctx context.Context, tenantID uuid.UUID, bq db.BuiltQuery) ([]models.User, int, error) {
-	// 1. Get total count with filters (but without limit/offset)
+	var finalWhere string
+	var finalArgs []interface{}
 
-	// Inject tenantID into args for security
-	// Our BuildQuery generated $1, $2 etc starting from an index.
-	// We need to ensure tenant_id is always present.
-
-	// Wait, BuildQuery might not have tenant_id in WhereClause.
-	// Let's refine the approach: we always append tenant_id.
-
-	finalWhere := "WHERE tenant_id = $1"
-	if bq.WhereClause != "" {
-		finalWhere += " AND " + bq.WhereClause[6:] // Remove "WHERE "
+	if tenantID == uuid.Nil {
+		if bq.WhereClause != "" {
+			finalWhere = bq.WhereClause
+		}
+		finalArgs = bq.Args
+	} else {
+		finalWhere = "WHERE tenant_id = $1"
+		if bq.WhereClause != "" {
+			// bq.WhereClause starts with "WHERE ", so we replace it with " AND "
+			finalWhere += " AND " + bq.WhereClause[6:]
+		}
+		finalArgs = append([]interface{}{tenantID}, bq.Args...)
 	}
-
-	finalArgs := append([]interface{}{tenantID}, bq.Args...)
 
 	countSQL := fmt.Sprintf("SELECT COUNT(*) FROM users %s", finalWhere)
 	var total int

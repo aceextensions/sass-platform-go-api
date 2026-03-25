@@ -15,6 +15,7 @@ import (
 
 type AuthService interface {
 	RegisterTenant(ctx context.Context, data dto.RegisterTenantDTO) (*dto.UserResponse, error)
+	RegisterIndividual(ctx context.Context, data dto.RegisterIndividualDTO) (*dto.UserResponse, error)
 	VerifyOTP(ctx context.Context, data dto.VerifyOTPDTO) (*dto.AuthResponse, error)
 	Login(ctx context.Context, data dto.LoginDTO) (*dto.AuthResponse, error)
 	Logout(ctx context.Context, userID uuid.UUID, refreshToken string) error
@@ -71,24 +72,33 @@ func (s *authService) RegisterTenant(ctx context.Context, data dto.RegisterTenan
 			return err
 		}
 
-		// Create Owner User using the shared transaction if possible
-		// Since AuthRepo and TenantRepo use the same pool, we can share the Tx
-		// For now, I'll pass the tenant ID to the authRepo
+		// 3b. Create User
 		user = models.User{
-			TenantID:     &tenant.ID,
 			Name:         data.OwnerName,
 			Phone:        data.Phone,
-			Email:        data.Email,
+			Email:        stringToPtr(data.Email),
 			PasswordHash: &passwordHash,
-			Role:         "owner",
+			Role:         "owner", // Super-role across all accounts
 			IsVerified:   false,
 			OTP:          &otp,
 			OTPExpiresAt: &otpExpiresAt,
+			TenantID:     &tenant.ID, // Primary account
 		}
 
-		// We need to ensure AuthRepo uses the SAME transaction
 		authRepoTx := repository.NewAuthRepositoryWithTx(tr.GetTx())
-		return authRepoTx.CreateUser(ctx, &user)
+		if err := authRepoTx.CreateUser(ctx, &user); err != nil {
+			return err
+		}
+
+		// 3c. Create Membership
+		membership := &models.Membership{
+			UserID:   user.ID,
+			TenantID: tenant.ID,
+			Role:     "owner",
+			Status:   "active",
+		}
+
+		return tr.CreateMembership(ctx, membership)
 	})
 
 	if err != nil {
@@ -97,6 +107,76 @@ func (s *authService) RegisterTenant(ctx context.Context, data dto.RegisterTenan
 	}
 
 	fmt.Printf("📱 OTP for %s: %s (expires in 10 minutes)\n", data.Phone, otp)
+
+	return &dto.UserResponse{
+		ID:       user.ID,
+		Name:     user.Name,
+		Email:    user.Email,
+		Phone:    user.Phone,
+		Role:     user.Role,
+		TenantID: user.TenantID,
+	}, nil
+}
+
+func (s *authService) RegisterIndividual(ctx context.Context, data dto.RegisterIndividualDTO) (*dto.UserResponse, error) {
+	passwordHash, err := HashPassword(data.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	otp := "123456"
+	otpExpiresAt := time.Now().Add(10 * time.Minute)
+
+	var user models.User
+
+	err = s.tenantRepo.WithTransaction(ctx, func(tr repository.TenantRepository) error {
+		// 1. Create Personal Tenant
+		tenantName := data.Name + "'s Space"
+		tenant := models.Tenant{
+			Name:         tenantName,
+			BusinessName: &tenantName,
+			Status:       "active",
+			Category:     models.TenantCategoryIndividual,
+		}
+
+		if err := tr.CreateTenant(ctx, &tenant); err != nil {
+			return err
+		}
+
+		// 2. Create User
+		user = models.User{
+			Name:         data.Name,
+			Phone:        data.Phone,
+			Email:        stringToPtr(data.Email),
+			PasswordHash: &passwordHash,
+			Role:         "owner",
+			IsVerified:   false,
+			OTP:          &otp,
+			OTPExpiresAt: &otpExpiresAt,
+			TenantID:     &tenant.ID,
+		}
+
+		authRepoTx := repository.NewAuthRepositoryWithTx(tr.GetTx())
+		if err := authRepoTx.CreateUser(ctx, &user); err != nil {
+			return err
+		}
+
+		// 3. Create Membership
+		membership := &models.Membership{
+			UserID:   user.ID,
+			TenantID: tenant.ID,
+			Role:     "owner",
+			Status:   "active",
+		}
+
+		return tr.CreateMembership(ctx, membership)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("📱 Individual OTP for %s: %s\n", data.Phone, otp)
 
 	return &dto.UserResponse{
 		ID:       user.ID,
@@ -159,17 +239,35 @@ func (s *authService) VerifyOTP(ctx context.Context, data dto.VerifyOTPDTO) (*dt
 		return nil, err
 	}
 
+	// Fetch account memberships for the response
+	memberships, _ := s.tenantRepo.GetMembershipsByUserID(ctx, user.ID)
+	accounts := make([]dto.AccountDTO, 0)
+	for _, m := range memberships {
+		t, _ := s.tenantRepo.GetTenantByID(ctx, m.TenantID)
+		if t != nil {
+			accounts = append(accounts, dto.AccountDTO{
+				ID:       t.ID,
+				Name:     t.Name,
+				Role:     m.Role,
+				Category: t.Category,
+			})
+		}
+	}
+
 	return &dto.AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User: dto.UserResponse{
-			ID:       user.ID,
-			Name:     user.Name,
-			Email:    user.Email,
-			Phone:    user.Phone,
-			Role:     user.Role,
-			TenantID: user.TenantID,
+			ID:        user.ID,
+			Name:      user.Name,
+			Email:     user.Email,
+			Phone:     user.Phone,
+			Role:      user.Role,
+			TenantID:  user.TenantID,
+			IsActive:  user.IsActive,
+			CreatedAt: user.CreatedAt,
 		},
+		Accounts: accounts,
 	}, nil
 }
 
@@ -221,17 +319,35 @@ func (s *authService) Login(ctx context.Context, data dto.LoginDTO) (*dto.AuthRe
 	}
 	_ = s.authRepo.CreateSession(ctx, &session)
 
+	// Fetch account memberships for the response
+	memberships, _ := s.tenantRepo.GetMembershipsByUserID(ctx, user.ID)
+	accounts := make([]dto.AccountDTO, 0)
+	for _, m := range memberships {
+		t, _ := s.tenantRepo.GetTenantByID(ctx, m.TenantID)
+		if t != nil {
+			accounts = append(accounts, dto.AccountDTO{
+				ID:       t.ID,
+				Name:     t.Name,
+				Role:     m.Role,
+				Category: t.Category,
+			})
+		}
+	}
+
 	return &dto.AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User: dto.UserResponse{
-			ID:       user.ID,
-			Name:     user.Name,
-			Email:    user.Email,
-			Phone:    user.Phone,
-			Role:     user.Role,
-			TenantID: user.TenantID,
+			ID:        user.ID,
+			Name:      user.Name,
+			Email:     user.Email,
+			Phone:     user.Phone,
+			Role:      user.Role,
+			TenantID:  user.TenantID,
+			IsActive:  user.IsActive,
+			CreatedAt: user.CreatedAt,
 		},
+		Accounts: accounts,
 	}, nil
 }
 
@@ -411,4 +527,10 @@ func (s *authService) GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserRes
 func generateRandomOTP() string {
 	// ... existing implementation ...
 	return fmt.Sprintf("%06d", rand.Intn(1000000))
+}
+func stringToPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }

@@ -72,7 +72,11 @@ We have a dedicated CLI tool for system-level administrative tasks, such as crea
 From the `sass-platform-go-api` directory:
 
 ```bash
+# Using Go directly
 go run ./api/cmd/mgmt/main.go -email "admin@example.com" -password "yourpassword" -name "Admin Name"
+
+# OR using Docker Compose
+docker compose exec api-go go run ./api/cmd/mgmt/main.go -email "admin@example.com" -password "yourpassword" -name "Admin Name"
 ```
 
 **Available Flags:**
@@ -81,6 +85,17 @@ go run ./api/cmd/mgmt/main.go -email "admin@example.com" -password "yourpassword
 - `-name`: User's full name (Default: "System Admin")
 - `-phone`: User's phone number
 - `-role`: User's role (Default: "superadmin")
+
+### Database Migrations
+Similar to Laravel's `artisan migrate`, use this command to apply new schema changes. For detailed instructions on adding new migrations, see the [Database Migrations Guide](docs/developer-guides/database-migrations.md).
+
+```bash
+# Using Go directly
+go run ./api/cmd/migrate/main.go [up|status]
+
+# OR using Docker Compose
+docker compose exec api-go go run ./api/cmd/migrate/main.go [up|status]
+```
 
 ## 🔒 Security & Auth
 - **JWT**: Stateless authentication using RSA/HMAC.

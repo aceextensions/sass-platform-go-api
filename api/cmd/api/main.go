@@ -85,6 +85,9 @@ func main() {
 	}))
 
 	// Swagger Documentation
+	e.GET("/swagger", func(c echo.Context) error {
+		return c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
+	})
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	// Routes
@@ -122,6 +125,7 @@ func main() {
 	// Auth Routes
 	auth := api.Group("/auth")
 	auth.POST("/register", authHandler.RegisterTenant)
+	auth.POST("/register-individual", authHandler.RegisterIndividual)
 	auth.POST("/verify-otp", authHandler.VerifyOTP)
 	auth.POST("/login", authHandler.Login)
 	auth.POST("/logout", authHandler.Logout, middleware.JWTMiddleware)

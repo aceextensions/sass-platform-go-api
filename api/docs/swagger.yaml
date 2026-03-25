@@ -207,10 +207,25 @@ definitions:
     - TransactionTypeOut
     - TransactionTypeTransfer
     - TransactionTypeAdjustment
+  dto.AccountDTO:
+    properties:
+      category:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+    type: object
   dto.AuthResponse:
     properties:
       accessToken:
         type: string
+      accounts:
+        items:
+          $ref: '#/definitions/dto.AccountDTO'
+        type: array
       refreshToken:
         type: string
       user:
@@ -453,6 +468,27 @@ definitions:
         type: string
     required:
     - refreshToken
+    type: object
+  dto.RegisterIndividualDTO:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        maxLength: 50
+        minLength: 6
+        type: string
+      phone:
+        maxLength: 15
+        minLength: 10
+        type: string
+    required:
+    - name
+    - password
+    - phone
     type: object
   dto.RegisterTenantDTO:
     properties:
@@ -3013,6 +3049,41 @@ paths:
               type: string
             type: object
       summary: Register a new tenant
+      tags:
+      - auth
+  /auth/register-individual:
+    post:
+      consumes:
+      - application/json
+      description: Create a new personal account and its owner
+      parameters:
+      - description: Individual Registration Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterIndividualDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new individual user
       tags:
       - auth
   /auth/reset-password:

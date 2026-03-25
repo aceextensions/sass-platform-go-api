@@ -37,8 +37,12 @@ func NewUserService(userRepo repository.UserRepository, tenantRepo repository.Te
 }
 
 func (s *userService) ListUsers(ctx context.Context, tenantID uuid.UUID, options db.QueryOptions) (*dto.UserListResponse, error) {
-	// Start args from $2 because $1 is tenantID
-	bq := db.BuildQuery(options, 2)
+	// Start args from $2 because $1 is tenantID (if not Nil)
+	startIndex := 1
+	if tenantID != uuid.Nil {
+		startIndex = 2
+	}
+	bq := db.BuildQuery(options, startIndex)
 
 	users, total, err := s.userRepo.ListUsers(ctx, tenantID, bq)
 	if err != nil {
@@ -135,35 +139,65 @@ func (s *userService) JoinTenant(ctx context.Context, data dto.JoinTenantDTO) er
 		return errors.New("invitation is no longer valid")
 	}
 
-	// 2. Prepare User
-	hash, err := HashPassword(data.Password)
-	if err != nil {
-		return err
+	// 2. Check if user already exists
+	var existingUser *models.User
+	if invite.Email != nil {
+		existingUser, _ = s.authRepo.GetUserByEmail(ctx, *invite.Email)
+	} else if invite.Phone != nil {
+		existingUser, _ = s.authRepo.GetUserByPhone(ctx, *invite.Phone)
 	}
 
-	user := &models.User{
-		TenantID:     &invite.TenantID,
-		Name:         data.Name,
-		Email:        invite.Email,
-		Phone:        "", // Optional or from invite
-		PasswordHash: &hash,
-		Role:         invite.Role,
-		IsVerified:   true,
-		IsActive:     true,
-	}
-	if invite.Phone != nil {
-		user.Phone = *invite.Phone
-	}
-
-	// 3. Execute in Transaction
+	// 3. Process Join within Transaction
 	return s.userRepo.WithTransaction(ctx, func(tr repository.UserRepository) error {
-		// Create User (using auth repository logic but shared transaction)
-		authRepoTx := repository.NewAuthRepositoryWithTx(tr.GetTx())
-		if err := authRepoTx.CreateUser(ctx, user); err != nil {
+		var userID uuid.UUID
+
+		if existingUser != nil {
+			// User exists, just use their ID
+			userID = existingUser.ID
+			// Note: We ignore the provided password/name as they already have an account
+		} else {
+			// New user, create them
+			hash, err := HashPassword(data.Password)
+			if err != nil {
+				return err
+			}
+
+			user := &models.User{
+				TenantID:     &invite.TenantID,
+				Name:         data.Name,
+				PasswordHash: &hash,
+				Role:         invite.Role,
+				IsVerified:   true,
+				IsActive:     true,
+			}
+			if invite.Email != nil {
+				user.Email = invite.Email
+			}
+			if invite.Phone != nil {
+				user.Phone = *invite.Phone
+			}
+
+			authRepoTx := repository.NewAuthRepositoryWithTx(tr.GetTx())
+			if err := authRepoTx.CreateUser(ctx, user); err != nil {
+				return err
+			}
+			userID = user.ID
+		}
+
+		// 4. Create Membership
+		tenantRepoTx := repository.NewTenantRepositoryWithTx(tr.GetTx())
+		membership := &models.Membership{
+			UserID:   userID,
+			TenantID: invite.TenantID,
+			Role:     invite.Role,
+			Status:   "active",
+		}
+
+		if err := tenantRepoTx.CreateMembership(ctx, membership); err != nil {
 			return err
 		}
 
-		// Update Invitation
+		// 5. Update Invitation
 		return tr.UpdateInvitationStatus(ctx, invite.ID, "accepted")
 	})
 }

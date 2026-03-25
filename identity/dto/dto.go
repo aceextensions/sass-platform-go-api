@@ -9,9 +9,16 @@ import (
 type RegisterTenantDTO struct {
 	TenantName string  `json:"tenantName" validate:"required,min=3,max=50"`
 	OwnerName  string  `json:"ownerName" validate:"required,min=2,max=100"`
-	Phone      string  `json:"phone" validate:"required,min=10,max=15"`
-	Email      *string `json:"email" validate:"omitempty,email"`
-	Password   string  `json:"password" validate:"required,min=6,max=50"`
+	Phone      string `json:"phone" validate:"required,min=10,max=15"`
+	Email      string `json:"email" validate:"omitempty,email"`
+	Password   string `json:"password" validate:"required,min=6,max=50"`
+}
+
+type RegisterIndividualDTO struct {
+	Name     string  `json:"name" validate:"required,min=2,max=100"`
+	Phone    string `json:"phone" validate:"required,min=10,max=15"`
+	Email    string `json:"email" validate:"omitempty,email"`
+	Password string `json:"password" validate:"required,min=6,max=50"`
 }
 
 type LoginDTO struct {
@@ -39,6 +46,14 @@ type AuthResponse struct {
 	AccessToken  string       `json:"accessToken"`
 	RefreshToken string       `json:"refreshToken"`
 	User         UserResponse `json:"user"`
+	Accounts     []AccountDTO `json:"accounts,omitempty"`
+}
+
+type AccountDTO struct {
+	ID       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	Role     string    `json:"role"`
+	Category string    `json:"category"`
 }
 
 type TokenPayload struct {

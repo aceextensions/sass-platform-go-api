@@ -42,6 +42,11 @@ func (h *UserHandler) ListUsers(c echo.Context) error {
 	user := c.Get("user").(middleware.AuthUser)
 	tenantID, _ := uuid.Parse(user.TenantID)
 
+	// Super Admin can list all users across all tenants
+	if user.Role == "superadmin" && c.QueryParam("all") == "true" {
+		tenantID = uuid.Nil
+	}
+
 	// Parse Query Options
 	options := db.QueryOptions{
 		Search:       c.QueryParam("search"),

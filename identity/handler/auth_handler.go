@@ -52,6 +52,38 @@ func (h *AuthHandler) RegisterTenant(c echo.Context) error {
 	})
 }
 
+// RegisterIndividual godoc
+// @Summary Register a new individual user
+// @Description Create a new personal account and its owner
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body dto.RegisterIndividualDTO true "Individual Registration Data"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /auth/register-individual [post]
+func (h *AuthHandler) RegisterIndividual(c echo.Context) error {
+	var req dto.RegisterIndividualDTO
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
+	res, err := h.authService.RegisterIndividual(c.Request().Context(), req)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusCreated, map[string]interface{}{
+		"message": "Registration successful. OTP sent.",
+		"userId":  res.ID,
+	})
+}
+
 // VerifyOTP godoc
 // @Summary Verify registration OTP
 // @Description Verify the 6-digit OTP sent during registration

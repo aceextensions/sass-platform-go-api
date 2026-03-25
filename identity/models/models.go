@@ -19,6 +19,7 @@ type Tenant struct {
 	Phone              *string    `json:"phone" db:"phone"`
 	Email              *string    `json:"email" db:"email"`
 	Status             string     `json:"status" db:"status"`
+	Category           string     `json:"category" db:"category"`
 	MaxUsers           string     `json:"maxUsers" db:"max_users"`
 	FiscalYearStart    *time.Time `json:"fiscalYearStart" db:"fiscal_year_start"`
 	FiscalYearEnd      *time.Time `json:"fiscalYearEnd" db:"fiscal_year_end"`
@@ -28,6 +29,23 @@ type Tenant struct {
 	IsActive           bool       `json:"isActive" db:"is_active"`
 	CreatedAt          time.Time  `json:"createdAt" db:"created_at"`
 	UpdatedAt          time.Time  `json:"updatedAt" db:"updated_at"`
+}
+
+// Tenant Categories
+const (
+	TenantCategoryBusiness   = "BUSINESS"
+	TenantCategoryIndividual = "INDIVIDUAL"
+)
+
+// Membership represents the memberships table
+type Membership struct {
+	ID        uuid.UUID `json:"id" db:"id"`
+	UserID    uuid.UUID `json:"userId" db:"user_id"`
+	TenantID  uuid.UUID `json:"tenantId" db:"tenant_id"`
+	Role      string    `json:"role" db:"role"`
+	Status    string    `json:"status" db:"status"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
+	UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
 }
 
 // User represents the users table
