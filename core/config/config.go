@@ -8,14 +8,28 @@ import (
 )
 
 type Config struct {
-	Env              string `mapstructure:"NODE_ENV"`
-	Port             string `mapstructure:"PORT"`
-	DatabaseURL      string `mapstructure:"DATABASE_URL"`
-	AuditDatabaseURL string `mapstructure:"AUDIT_DATABASE_URL"`
-	JWTSecret        string `mapstructure:"JWT_SECRET"`
-	MinioEndpoint    string `mapstructure:"MINIO_ENDPOINT"`
-	MinioAccessKey   string `mapstructure:"MINIO_ACCESS_KEY"`
-	MinioSecretKey   string `mapstructure:"MINIO_SECRET_KEY"`
+	Env                string `mapstructure:"NODE_ENV"`
+	Port               string `mapstructure:"PORT"`
+	DatabaseURL        string `mapstructure:"DATABASE_URL"`
+	AuditDatabaseURL   string `mapstructure:"AUDIT_DATABASE_URL"`
+	JWTSecret          string `mapstructure:"JWT_SECRET"`
+	MinioEndpoint      string `mapstructure:"MINIO_ENDPOINT"`
+	MinioAccessKey     string `mapstructure:"MINIO_ACCESS_KEY"`
+	MinioSecretKey     string `mapstructure:"MINIO_SECRET_KEY"`
+	AppBaseURL         string `mapstructure:"APP_BASE_URL"`
+	ApiBaseURL         string `mapstructure:"API_BASE_URL"`
+	RequirePhone       bool   `mapstructure:"REQUIRE_PHONE"`
+	SMTPHost           string `mapstructure:"SMTP_HOST"`
+	SMTPPort           int    `mapstructure:"SMTP_PORT"`
+	SMTPUser           string `mapstructure:"SMTP_USER"`
+	SMTPPass           string `mapstructure:"SMTP_PASS"`
+	SMTPFrom           string `mapstructure:"SMTP_FROM"`
+	SlackWebhookURL    string `mapstructure:"SLACK_WEBHOOK_URL"`
+	GoogleClientID     string `mapstructure:"GOOGLE_CLIENT_ID"`
+	GoogleClientSecret string `mapstructure:"GOOGLE_CLIENT_SECRET"`
+	GithubClientID     string `mapstructure:"GITHUB_CLIENT_ID"`
+	GithubClientSecret string `mapstructure:"GITHUB_CLIENT_SECRET"`
+	SessionSecret      string `mapstructure:"SESSION_SECRET"`
 }
 
 var GlobalConfig *Config
@@ -23,6 +37,12 @@ var GlobalConfig *Config
 func Load() *Config {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	// Explicitly read .env file if it exists
+	viper.SetConfigFile(".env")
+	if err := viper.ReadInConfig(); err != nil {
+		log.Printf("Warning: Could not read .env file: %v", err)
+	}
 
 	// Default values
 	viper.SetDefault("NODE_ENV", "development")

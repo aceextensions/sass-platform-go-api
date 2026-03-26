@@ -9,10 +9,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/aceextension/core/config"
 	"github.com/aceextension/core/db"
 	"github.com/aceextension/identity/dto"
 	"github.com/aceextension/identity/models"
 	"github.com/aceextension/identity/repository"
+	notifDomain "github.com/aceextension/notification/domain"
+	notifService "github.com/aceextension/notification/service"
 	"github.com/google/uuid"
 )
 
@@ -20,19 +23,23 @@ type UserService interface {
 	ListUsers(ctx context.Context, tenantID uuid.UUID, options db.QueryOptions) (*dto.UserListResponse, error)
 	InviteUser(ctx context.Context, actorID uuid.UUID, tenantID uuid.UUID, role string, data dto.InviteUserDTO) (*models.Invitation, error)
 	JoinTenant(ctx context.Context, data dto.JoinTenantDTO) error
+	ListInvitations(ctx context.Context, tenantID uuid.UUID) ([]dto.InvitationResponse, error)
+	RevokeInvitation(ctx context.Context, actorRole string, tenantID uuid.UUID, id uuid.UUID) error
 }
 
 type userService struct {
 	userRepo   repository.UserRepository
 	tenantRepo repository.TenantRepository
 	authRepo   repository.AuthRepository
+	notifServ  notifService.NotificationService
 }
 
-func NewUserService(userRepo repository.UserRepository, tenantRepo repository.TenantRepository, authRepo repository.AuthRepository) UserService {
+func NewUserService(userRepo repository.UserRepository, tenantRepo repository.TenantRepository, authRepo repository.AuthRepository, notifServ notifService.NotificationService) UserService {
 	return &userService{
 		userRepo:   userRepo,
 		tenantRepo: tenantRepo,
 		authRepo:   authRepo,
+		notifServ:  notifServ,
 	}
 }
 
@@ -124,7 +131,26 @@ func (s *userService) InviteUser(ctx context.Context, actorID uuid.UUID, tenantI
 		return nil, err
 	}
 
-	// In real app: Send notification (email/sms)
+	// 4. Send Notification
+	channel := notifDomain.ChannelEmail
+	recipient := data.Email
+	if data.Phone != "" {
+		channel = notifDomain.ChannelSMS
+		recipient = data.Phone
+	}
+
+	inviteLink := config.GlobalConfig.AppBaseURL + "/join?token=" + invite.Token
+	appName := "Practixa"
+	content := "You have been invited to join " + appName + " as a " + data.Role + ". Click the link to join: " + inviteLink
+
+	s.notifServ.Send(ctx, notifService.SendRequest{
+		TenantID:  tenantID,
+		Channel:   channel,
+		Recipient: recipient,
+		Content:   content,
+		Priority:  notifDomain.PriorityHigh,
+	})
+
 	return invite, nil
 }
 
@@ -200,6 +226,36 @@ func (s *userService) JoinTenant(ctx context.Context, data dto.JoinTenantDTO) er
 		// 5. Update Invitation
 		return tr.UpdateInvitationStatus(ctx, invite.ID, "accepted")
 	})
+}
+
+func (s *userService) ListInvitations(ctx context.Context, tenantID uuid.UUID) ([]dto.InvitationResponse, error) {
+	invites, err := s.userRepo.ListInvitations(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]dto.InvitationResponse, 0, len(invites))
+	for _, i := range invites {
+		res = append(res, dto.InvitationResponse{
+			ID:        i.ID,
+			Email:     i.Email,
+			Phone:     i.Phone,
+			Role:      i.Role,
+			Status:    i.Status,
+			ExpiresAt: i.ExpiresAt,
+			CreatedAt: i.CreatedAt,
+		})
+	}
+	return res, nil
+}
+
+func (s *userService) RevokeInvitation(ctx context.Context, actorRole string, tenantID uuid.UUID, id uuid.UUID) error {
+	// 1. RBAC Check
+	if actorRole != "owner" && actorRole != "manager" {
+		return errors.New("unauthorized: only owners and managers can revoke invitations")
+	}
+
+	return s.userRepo.DeleteInvitation(ctx, id, tenantID)
 }
 
 func generateRandomToken(n int) (string, error) {

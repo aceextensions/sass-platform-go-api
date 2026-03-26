@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"time"
 
+	"github.com/aceextension/core/config"
 	"github.com/aceextension/identity/dto"
 	"github.com/aceextension/identity/models"
 	"github.com/aceextension/identity/repository"
@@ -25,6 +25,7 @@ type AuthService interface {
 	ResetPassword(ctx context.Context, data dto.ResetPasswordDTO) error
 	Impersonate(ctx context.Context, tenantID uuid.UUID, adminUserID uuid.UUID) (*dto.AuthResponse, error)
 	GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserResponse, error)
+	SocialLogin(ctx context.Context, providerUser interface{}) (*dto.AuthResponse, error)
 }
 
 type authService struct {
@@ -46,7 +47,12 @@ func (s *authService) RegisterTenant(ctx context.Context, data dto.RegisterTenan
 		return nil, err
 	}
 
-	// 2. Generate OTP
+	// 2. Validate Configurable Requirements
+	if config.GlobalConfig.RequirePhone && data.Phone == "" {
+		return nil, errors.New("phone number is required by system policy")
+	}
+
+	// 3. Generate OTP
 	otp := "123456" // Default for dev as per Bun implementation
 	otpExpiresAt := time.Now().Add(10 * time.Minute)
 
@@ -124,6 +130,11 @@ func (s *authService) RegisterIndividual(ctx context.Context, data dto.RegisterI
 		return nil, err
 	}
 
+	// 2. Validate Configurable Requirements (Skip phone requirement for social login)
+	if !data.IsSocial && config.GlobalConfig.RequirePhone && data.Phone == "" {
+		return nil, errors.New("phone number is required")
+	}
+
 	otp := "123456"
 	otpExpiresAt := time.Now().Add(10 * time.Minute)
 
@@ -189,9 +200,9 @@ func (s *authService) RegisterIndividual(ctx context.Context, data dto.RegisterI
 }
 
 func (s *authService) VerifyOTP(ctx context.Context, data dto.VerifyOTPDTO) (*dto.AuthResponse, error) {
-	user, err := s.authRepo.GetUserByPhone(ctx, data.Phone)
+	user, err := s.authRepo.GetUserByIdentifier(ctx, data.Identifier)
 	if err != nil {
-		return nil, errors.New("invalid OTP or user already verified")
+		return nil, errors.New("invalid code or account not found")
 	}
 
 	if user.IsVerified {
@@ -272,14 +283,8 @@ func (s *authService) VerifyOTP(ctx context.Context, data dto.VerifyOTPDTO) (*dt
 }
 
 func (s *authService) Login(ctx context.Context, data dto.LoginDTO) (*dto.AuthResponse, error) {
-	// Support both phone and email login
-	var user *models.User
-	var err error
-
-	user, err = s.authRepo.GetUserByPhone(ctx, data.Phone)
-	if err != nil {
-		user, err = s.authRepo.GetUserByEmail(ctx, data.Phone)
-	}
+	// Support both phone and email login via common identifier field
+	user, err := s.authRepo.GetUserByIdentifier(ctx, data.Identifier)
 
 	if err != nil || user == nil {
 		return nil, errors.New("invalid credentials")
@@ -524,10 +529,88 @@ func (s *authService) GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserRes
 	}, nil
 }
 
-func generateRandomOTP() string {
-	// ... existing implementation ...
-	return fmt.Sprintf("%06d", rand.Intn(1000000))
+func (s *authService) SocialLogin(ctx context.Context, providerUser interface{}) (*dto.AuthResponse, error) {
+	// 1. Duck-type extract user info (since goth is in a separate package)
+	type socialUser struct {
+		Email string
+		Name  string
+	}
+
+	// This is a simplified mapping - in production we'd use a shared DTO or reflect
+	// For now, let's assume the handler passes a map or a struct we can handle
+	var email, name string
+	if u, ok := providerUser.(map[string]string); ok {
+		email = u["email"]
+		name = u["name"]
+	}
+
+	if email == "" {
+		return nil, errors.New("social login failed: missing email")
+	}
+
+	// 2. Check if user exists by email
+	user, err := s.authRepo.GetUserByIdentifier(ctx, email)
+	if err != nil {
+		// 3. Auto-Register if not found (Creating a personal tenant/Individual)
+		registerRes, err := s.RegisterIndividual(ctx, dto.RegisterIndividualDTO{
+			Name:     name,
+			Email:    email,
+			Password: uuid.New().String(), // Random password for social users
+			IsSocial: true,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// 4. Auto-verify social users
+		_ = s.authRepo.UpdateUserVerification(ctx, registerRes.ID, true)
+
+		// Re-fetch the newly created user
+		user, _ = s.authRepo.GetUserByID(ctx, registerRes.ID)
+	}
+
+	// 5. Generate Response (Reuse VerifyOTP logic)
+	payload := dto.TokenPayload{
+		UserID:   user.ID,
+		TenantID: user.TenantID,
+		Role:     user.Role,
+	}
+
+	accessToken, _ := GenerateAccessToken(payload)
+	refreshToken, _ := GenerateRefreshToken(payload)
+
+	// Fetch account memberships for the response
+	memberships, _ := s.tenantRepo.GetMembershipsByUserID(ctx, user.ID)
+	accounts := make([]dto.AccountDTO, 0)
+	for _, m := range memberships {
+		t, _ := s.tenantRepo.GetTenantByID(ctx, m.TenantID)
+		if t != nil {
+			accounts = append(accounts, dto.AccountDTO{
+				ID:       t.ID,
+				Name:     t.Name,
+				Role:     m.Role,
+				Category: t.Category,
+			})
+		}
+	}
+
+	return &dto.AuthResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		User: dto.UserResponse{
+			ID:        user.ID,
+			Name:      user.Name,
+			Email:     user.Email,
+			Phone:     user.Phone,
+			Role:      user.Role,
+			TenantID:  user.TenantID,
+			IsActive:  user.IsActive,
+			CreatedAt: user.CreatedAt,
+		},
+		Accounts: accounts,
+	}, nil
 }
+
 func stringToPtr(s string) *string {
 	if s == "" {
 		return nil

@@ -15,4 +15,5 @@ use (
 	./purchase
 	./quiz
 	./sales
+	./subscription
 )

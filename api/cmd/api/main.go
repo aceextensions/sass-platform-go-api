@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -47,11 +48,28 @@ import (
 
 	"github.com/aceextension/quiz"
 	quizHandler "github.com/aceextension/quiz/handler"
+	"github.com/aceextension/sociallogin"
 )
 
 func main() {
 	// 1. Load Configuration
 	cfg := config.Load()
+
+	// 1.1 Initialize Social Login
+	sociallogin.Init(sociallogin.Config{
+		SessionSecret: cfg.SessionSecret,
+		IsProduction:  cfg.Env == "production",
+		Google: &sociallogin.ProviderConfig{
+			ClientKey:    cfg.GoogleClientID,
+			ClientSecret: cfg.GoogleClientSecret,
+			CallbackURL:  fmt.Sprintf("%s/api/auth/google/callback", cfg.ApiBaseURL),
+		},
+		GitHub: &sociallogin.ProviderConfig{
+			ClientKey:    cfg.GithubClientID,
+			ClientSecret: cfg.GithubClientSecret,
+			CallbackURL:  fmt.Sprintf("%s/api/auth/github/callback", cfg.ApiBaseURL),
+		},
+	})
 
 	// 2. Initialize Logger
 	logger.Init(cfg.Env)
@@ -67,7 +85,7 @@ func main() {
 	userRepo := repository.NewUserRepository()
 
 	authService := service.NewAuthService(authRepo, tenantRepo)
-	userService := service.NewUserService(userRepo, tenantRepo, authRepo)
+	userService := service.NewUserService(userRepo, tenantRepo, authRepo, notification.Service)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
@@ -136,10 +154,16 @@ func main() {
 	auth.POST("/impersonate/:tenantId", authHandler.Impersonate, middleware.JWTMiddleware)
 	auth.GET("/me", authHandler.GetMe, middleware.JWTMiddleware)
 
+	// Social Login Routes
+	auth.GET("/:provider", authHandler.SocialLoginBegin)
+	auth.GET("/:provider/callback", authHandler.SocialLoginCallback)
+
 	// User Management Routes
 	users := api.Group("/users", middleware.JWTMiddleware)
 	users.GET("", userHandler.ListUsers)
+	users.GET("/invitations", userHandler.ListInvitations)
 	users.POST("/invite", userHandler.InviteUser)
+	users.DELETE("/invitations/:id", userHandler.RevokeInvitation)
 	users.POST("/join", userHandler.JoinTenant) // Join is public but with token
 
 	// 5. Initialize Notification Module & Worker

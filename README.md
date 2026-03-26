@@ -98,6 +98,7 @@ docker compose exec api-go go run ./api/cmd/migrate/main.go [up|status]
 ```
 
 ## 🔒 Security & Auth
+- **Social Login**: Configurable OAuth2/OIDC integration (Google/GitHub). See the [Social Login Guide](docs/developer-guides/social-login.md).
 - **JWT**: Stateless authentication using RSA/HMAC.
 - **RBAC**: Role-based access control middleware implemented in the `identity` module.
 - **Migrations**: Database schema is managed via the main project's Drizzle migrations.

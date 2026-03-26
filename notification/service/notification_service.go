@@ -5,9 +5,14 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
+	"github.com/aceextension/core/config"
 	"github.com/aceextension/notification/domain"
 	"github.com/aceextension/notification/repository"
+	"github.com/aceextension/notifier"
+	"github.com/aceextension/notifier/email"
+	"github.com/aceextension/notifier/slack"
 	"github.com/google/uuid"
 )
 
@@ -91,12 +96,44 @@ func (s *notificationService) sendInstant(ctx context.Context, n *domain.Notific
 		return fmt.Errorf("failed to update status to processing: %w", err)
 	}
 
-	// Mock Sending (Replace with real provider logic later)
-	log.Printf("SENDING [%s] to %s: %s", n.Channel, n.Recipient, n.Content)
+	// 4. Send using real providers
+	var ntr notifier.Notifier
+	if n.Channel == domain.ChannelEmail {
+		ntr = email.New(email.Config{
+			SMTPHost: config.GlobalConfig.SMTPHost,
+			SMTPPort: config.GlobalConfig.SMTPPort,
+			Username: config.GlobalConfig.SMTPUser,
+			Password: config.GlobalConfig.SMTPPass,
+			From:     config.GlobalConfig.SMTPFrom,
+			To:       []string{n.Recipient},
+		})
+	} else if n.Channel == domain.ChannelSMS {
+		// Mock SMS OR fallback to Slack if webhook config exists
+		if config.GlobalConfig.SlackWebhookURL != "" {
+			ntr = slack.New(config.GlobalConfig.SlackWebhookURL)
+		} else if config.GlobalConfig.Env == "development" {
+			log.Printf("MOCK SMS to %s: %s", n.Recipient, n.Content)
+		}
+	}
 
-	// Simulate success
+	if ntr != nil {
+		subject := "Update from Practixa"
+		if n.Subject != nil {
+			subject = *n.Subject
+		}
+		if err := ntr.Send(subject, n.Content); err != nil {
+			n.Status = domain.StatusFailed
+			errMsg := err.Error()
+			n.ErrorMessage = &errMsg
+			s.repo.Update(ctx, n)
+			return err
+		}
+	}
+
+	// Update status to SENT
 	n.Status = domain.StatusSent
-	// n.SentAt = time.Now() // Need to handle *time.Time
+	now := time.Now()
+	n.SentAt = &now
 
 	if err := s.repo.Update(ctx, n); err != nil {
 		return fmt.Errorf("failed to update status to sent: %w", err)

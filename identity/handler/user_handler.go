@@ -139,3 +139,51 @@ func (h *UserHandler) JoinTenant(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Joined successfully"})
 }
+
+// ListInvitations godoc
+// @Summary List tenant invitations
+// @Description Fetch all invitations for the current tenant
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {array} dto.InvitationResponse
+// @Security BearerAuth
+// @Router /users/invitations [get]
+func (h *UserHandler) ListInvitations(c echo.Context) error {
+	user := c.Get("user").(middleware.AuthUser)
+	tenantID, _ := uuid.Parse(user.TenantID)
+
+	res, err := h.userService.ListInvitations(c.Request().Context(), tenantID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+// RevokeInvitation godoc
+// @Summary Revoke an invitation
+// @Description Permanently delete a pending invitation
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "Invitation ID"
+// @Success 200 {object} map[string]string
+// @Security BearerAuth
+// @Router /users/invitations/{id} [delete]
+func (h *UserHandler) RevokeInvitation(c echo.Context) error {
+	idRaw := c.Param("id")
+	id, err := uuid.Parse(idRaw)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid invitation id"})
+	}
+
+	user := c.Get("user").(middleware.AuthUser)
+	tenantID, _ := uuid.Parse(user.TenantID)
+
+	if err := h.userService.RevokeInvitation(c.Request().Context(), user.Role, tenantID, id); err != nil {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"message": "Invitation revoked successfully"})
+}

@@ -9,26 +9,27 @@ import (
 type RegisterTenantDTO struct {
 	TenantName string  `json:"tenantName" validate:"required,min=3,max=50"`
 	OwnerName  string  `json:"ownerName" validate:"required,min=2,max=100"`
-	Phone      string `json:"phone" validate:"required,min=10,max=15"`
-	Email      string `json:"email" validate:"omitempty,email"`
+	Phone      string  `json:"phone" validate:"omitempty"`
+	Email      string  `json:"email" validate:"required,email"`
 	Password   string `json:"password" validate:"required,min=6,max=50"`
 }
 
 type RegisterIndividualDTO struct {
-	Name     string  `json:"name" validate:"required,min=2,max=100"`
-	Phone    string `json:"phone" validate:"required,min=10,max=15"`
-	Email    string `json:"email" validate:"omitempty,email"`
+	Name     string `json:"name" validate:"required,min=2,max=100"`
+	Phone    string `json:"phone" validate:"omitempty"`
+	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=6,max=50"`
+	IsSocial bool   `json:"isSocial"`
 }
 
 type LoginDTO struct {
-	Phone    string `json:"phone" validate:"required"`
-	Password string `json:"password" validate:"required"`
+	Identifier string `json:"identifier" validate:"required"`
+	Password   string `json:"password" validate:"required"`
 }
 
 type VerifyOTPDTO struct {
-	Phone string `json:"phone" validate:"required"`
-	OTP   string `json:"otp" validate:"required,len=6"`
+	Identifier string `json:"identifier" validate:"required"`
+	OTP        string `json:"otp" validate:"required,len=6"`
 }
 
 type UserResponse struct {
@@ -107,4 +108,14 @@ type Pagination struct {
 	TotalPages  int `json:"totalPages"`
 	CurrentPage int `json:"currentPage"`
 	Limit       int `json:"limit"`
+}
+
+type InvitationResponse struct {
+	ID        uuid.UUID `json:"id"`
+	Email     *string   `json:"email"`
+	Phone     *string   `json:"phone"`
+	Role      string    `json:"role"`
+	Status    string    `json:"status"`
+	ExpiresAt time.Time `json:"expiresAt"`
+	CreatedAt time.Time `json:"createdAt"`
 }

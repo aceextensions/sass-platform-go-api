@@ -6,8 +6,9 @@ import (
 	"github.com/aceextension/identity/dto"
 	"github.com/aceextension/identity/middleware"
 	"github.com/aceextension/identity/service"
+	"github.com/aceextension/sociallogin"
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
+	echo "github.com/labstack/echo/v4"
 )
 
 type AuthHandler struct {
@@ -343,6 +344,26 @@ func (h *AuthHandler) GetMe(c echo.Context) error {
 	res, err := h.authService.GetMe(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+// SocialLoginBegin starts the social login process
+func (h *AuthHandler) SocialLoginBegin(c echo.Context) error {
+	return sociallogin.BeginAuth(c)
+}
+
+// SocialLoginCallback handles the provider callback
+func (h *AuthHandler) SocialLoginCallback(c echo.Context) error {
+	userMap, err := sociallogin.CompleteAuth(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+	}
+
+	res, err := h.authService.SocialLogin(c.Request().Context(), userMap)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, res)

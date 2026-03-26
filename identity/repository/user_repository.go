@@ -20,6 +20,8 @@ type UserRepository interface {
 	CreateInvitation(ctx context.Context, invite *models.Invitation) error
 	GetInvitationByToken(ctx context.Context, token string) (*models.Invitation, error)
 	UpdateInvitationStatus(ctx context.Context, id uuid.UUID, status string) error
+	ListInvitations(ctx context.Context, tenantID uuid.UUID) ([]models.Invitation, error)
+	DeleteInvitation(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
 
 	// Transaction support
 	WithTransaction(ctx context.Context, fn func(repo UserRepository) error) error
@@ -133,6 +135,34 @@ func (r *pgUserRepository) GetInvitationByToken(ctx context.Context, token strin
 func (r *pgUserRepository) UpdateInvitationStatus(ctx context.Context, id uuid.UUID, status string) error {
 	query := `UPDATE invitations SET status = $1 WHERE id = $2`
 	_, err := r.getExecutor().Exec(ctx, query, status, id)
+	return err
+}
+
+func (r *pgUserRepository) ListInvitations(ctx context.Context, tenantID uuid.UUID) ([]models.Invitation, error) {
+	query := `SELECT id, tenant_id, email, phone, role, token, expires_at, status, created_at FROM invitations WHERE tenant_id = $1 ORDER BY created_at DESC`
+	rows, err := r.getExecutor().Query(ctx, query, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var invites []models.Invitation
+	for rows.Next() {
+		var i models.Invitation
+		err := rows.Scan(
+			&i.ID, &i.TenantID, &i.Email, &i.Phone, &i.Role, &i.Token, &i.ExpiresAt, &i.Status, &i.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		invites = append(invites, i)
+	}
+	return invites, nil
+}
+
+func (r *pgUserRepository) DeleteInvitation(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error {
+	query := `DELETE FROM invitations WHERE id = $1 AND tenant_id = $2`
+	_, err := r.getExecutor().Exec(ctx, query, id, tenantID)
 	return err
 }
 
