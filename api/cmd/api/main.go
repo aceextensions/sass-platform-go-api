@@ -79,6 +79,9 @@ func main() {
 	db.Init(cfg.DatabaseURL, cfg.AuditDatabaseURL)
 	defer db.Close()
 
+	// 3.5 Initialize Notification Module
+	notification.Init()
+
 	// 4. Initialize Dependency Injection
 	authRepo := repository.NewAuthRepository()
 	tenantRepo := repository.NewTenantRepository()
@@ -164,10 +167,11 @@ func main() {
 	users.GET("/invitations", userHandler.ListInvitations)
 	users.POST("/invite", userHandler.InviteUser)
 	users.DELETE("/invitations/:id", userHandler.RevokeInvitation)
+	users.DELETE("/:id", userHandler.RemoveMember)
 	users.POST("/join", userHandler.JoinTenant) // Join is public but with token
 
 	// 5. Initialize Notification Module & Worker
-	notification.Init()
+	// Init already called above
 	// Register Notification Routes
 	notificationHandler.RegisterRoutes(e)
 
@@ -201,29 +205,33 @@ func main() {
 	subs.POST("/subscribe", subHandler.Subscribe)
 
 	// 7. Accounting Module
-	accounting.Init()
-	accAccountHandler := accountingHandler.NewAccountHandler(accounting.Service)
-	accJournalHandler := accountingHandler.NewJournalHandler(accounting.Service)
-	accReportHandler := accountingHandler.NewReportHandler(accounting.Service)
+	if cfg.EnableAccounting {
+		accounting.Init()
+		accAccountHandler := accountingHandler.NewAccountHandler(accounting.Service)
+		accJournalHandler := accountingHandler.NewJournalHandler(accounting.Service)
+		accReportHandler := accountingHandler.NewReportHandler(accounting.Service)
 
-	accountingHandler.RegisterRoutes(
-		api.Group("/v1"), // Prefix /api/v1 handled in routes.go via group
-		accAccountHandler,
-		accJournalHandler,
-		accReportHandler,
-	)
+		accountingHandler.RegisterRoutes(
+			api.Group("/v1"), // Prefix /api/v1 handled in routes.go via group
+			accAccountHandler,
+			accJournalHandler,
+			accReportHandler,
+		)
+	}
 
 	// 8. Inventory Module
-	inventory.Init()
-	// Warehouse Service is exposed in inventory package
-	warehouseHandler := inventoryHandler.NewWarehouseHandler(inventory.WarehouseService)
-	invHandler := inventoryHandler.NewInventoryHandler(inventory.Service)
+	if cfg.EnableInventory {
+		inventory.Init()
+		// Warehouse Service is exposed in inventory package
+		warehouseHandler := inventoryHandler.NewWarehouseHandler(inventory.WarehouseService)
+		invHandler := inventoryHandler.NewInventoryHandler(inventory.Service)
 
-	inventoryHandler.RegisterRoutes(
-		api.Group("/v1"),
-		warehouseHandler,
-		invHandler,
-	)
+		inventoryHandler.RegisterRoutes(
+			api.Group("/v1"),
+			warehouseHandler,
+			invHandler,
+		)
+	}
 
 	// 8b. Catalog Module
 	catalog.Init()
@@ -231,18 +239,22 @@ func main() {
 	catalogHandler.RegisterRoutes(catalogGate)
 
 	// 9. Sales Module (Commerce)
-	sRepo := salesRepo.NewPostgresSalesRepository(db.MainPool)
-	sService := salesService.NewSalesService(sRepo, inventory.Service, accounting.Service)
-	sales.Init(sService) // Optional: set global
-	salesH := salesHandler.NewSalesHandler(sService)
-	salesHandler.RegisterRoutes(api.Group("/v1"), salesH)
+	if cfg.EnableSales {
+		sRepo := salesRepo.NewPostgresSalesRepository(db.MainPool)
+		sService := salesService.NewSalesService(sRepo, inventory.Service, accounting.Service)
+		sales.Init(sService) // Optional: set global
+		salesH := salesHandler.NewSalesHandler(sService)
+		salesHandler.RegisterRoutes(api.Group("/v1"), salesH)
+	}
 
 	// 10. Purchase Module (Commerce)
-	pRepo := purchaseRepo.NewPostgresPurchaseRepository(db.MainPool)
-	pService := purchaseService.NewPurchaseService(pRepo, inventory.Service, accounting.Service)
-	purchase.Init(pService)
-	purchaseH := purchaseHandler.NewPurchaseHandler(pService)
-	purchaseHandler.RegisterRoutes(api.Group("/v1"), purchaseH)
+	if cfg.EnablePurchase {
+		pRepo := purchaseRepo.NewPostgresPurchaseRepository(db.MainPool)
+		pService := purchaseService.NewPurchaseService(pRepo, inventory.Service, accounting.Service)
+		purchase.Init(pService)
+		purchaseH := purchaseHandler.NewPurchaseHandler(pService)
+		purchaseHandler.RegisterRoutes(api.Group("/v1"), purchaseH)
+	}
 
 	// 11. Quiz Module
 	quiz.Init("")

@@ -30,6 +30,10 @@ type Config struct {
 	GithubClientID     string `mapstructure:"GITHUB_CLIENT_ID"`
 	GithubClientSecret string `mapstructure:"GITHUB_CLIENT_SECRET"`
 	SessionSecret      string `mapstructure:"SESSION_SECRET"`
+	EnableInventory    bool   `mapstructure:"ENABLE_INVENTORY"`
+	EnableAccounting   bool   `mapstructure:"ENABLE_ACCOUNTING"`
+	EnableSales        bool   `mapstructure:"ENABLE_SALES"`
+	EnablePurchase     bool   `mapstructure:"ENABLE_PURCHASE"`
 }
 
 var GlobalConfig *Config
@@ -50,6 +54,10 @@ func Load() *Config {
 	viper.SetDefault("DATABASE_URL", "postgresql://aceextension:aceextension_dev@localhost:5432/aceextension")
 	viper.SetDefault("AUDIT_DATABASE_URL", "postgresql://aceextension:aceextension_audit@localhost:5433/aceextension_audit")
 	viper.SetDefault("JWT_SECRET", "supersecretjwtkey")
+	viper.SetDefault("ENABLE_INVENTORY", false)
+	viper.SetDefault("ENABLE_ACCOUNTING", false)
+	viper.SetDefault("ENABLE_SALES", false)
+	viper.SetDefault("ENABLE_PURCHASE", false)
 
 	config := &Config{}
 	err := viper.Unmarshal(config)

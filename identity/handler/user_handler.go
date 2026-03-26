@@ -187,3 +187,31 @@ func (h *UserHandler) RevokeInvitation(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Invitation revoked successfully"})
 }
+
+// RemoveMember godoc
+// @Summary Remove a member from the tenant
+// @Description Permanently remove a user's membership in the current tenant
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} map[string]string
+// @Security BearerAuth
+// @Router /users/{id} [delete]
+func (h *UserHandler) RemoveMember(c echo.Context) error {
+	idRaw := c.Param("id")
+	userID, err := uuid.Parse(idRaw)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid user id"})
+	}
+
+	user := c.Get("user").(middleware.AuthUser)
+	actorID, _ := uuid.Parse(user.UserID)
+	tenantID, _ := uuid.Parse(user.TenantID)
+
+	if err := h.userService.RemoveMember(c.Request().Context(), actorID, user.Role, tenantID, userID); err != nil {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"message": "Member removed successfully"})
+}

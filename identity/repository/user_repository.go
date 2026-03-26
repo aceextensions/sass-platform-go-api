@@ -22,6 +22,7 @@ type UserRepository interface {
 	UpdateInvitationStatus(ctx context.Context, id uuid.UUID, status string) error
 	ListInvitations(ctx context.Context, tenantID uuid.UUID) ([]models.Invitation, error)
 	DeleteInvitation(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error
+	DeleteMembership(ctx context.Context, userID uuid.UUID, tenantID uuid.UUID) error
 
 	// Transaction support
 	WithTransaction(ctx context.Context, fn func(repo UserRepository) error) error
@@ -163,6 +164,12 @@ func (r *pgUserRepository) ListInvitations(ctx context.Context, tenantID uuid.UU
 func (r *pgUserRepository) DeleteInvitation(ctx context.Context, id uuid.UUID, tenantID uuid.UUID) error {
 	query := `DELETE FROM invitations WHERE id = $1 AND tenant_id = $2`
 	_, err := r.getExecutor().Exec(ctx, query, id, tenantID)
+	return err
+}
+
+func (r *pgUserRepository) DeleteMembership(ctx context.Context, userID uuid.UUID, tenantID uuid.UUID) error {
+	query := `DELETE FROM memberships WHERE user_id = $1 AND tenant_id = $2`
+	_, err := r.getExecutor().Exec(ctx, query, userID, tenantID)
 	return err
 }
 

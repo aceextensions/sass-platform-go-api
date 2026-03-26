@@ -25,6 +25,7 @@ type UserService interface {
 	JoinTenant(ctx context.Context, data dto.JoinTenantDTO) error
 	ListInvitations(ctx context.Context, tenantID uuid.UUID) ([]dto.InvitationResponse, error)
 	RevokeInvitation(ctx context.Context, actorRole string, tenantID uuid.UUID, id uuid.UUID) error
+	RemoveMember(ctx context.Context, actorID uuid.UUID, actorRole string, tenantID uuid.UUID, userID uuid.UUID) error
 }
 
 type userService struct {
@@ -256,6 +257,27 @@ func (s *userService) RevokeInvitation(ctx context.Context, actorRole string, te
 	}
 
 	return s.userRepo.DeleteInvitation(ctx, id, tenantID)
+}
+
+func (s *userService) RemoveMember(ctx context.Context, actorID uuid.UUID, actorRole string, tenantID uuid.UUID, userID uuid.UUID) error {
+	// 1. RBAC Check
+	if actorRole != "owner" && actorRole != "manager" {
+		return errors.New("unauthorized: only owners and managers can remove members")
+	}
+
+	// 2. Prevent self-removal (they should delete tenant or leave instead)
+	if actorID == userID {
+		return errors.New("cannot remove yourself from the workspace")
+	}
+
+	// 3. Prevent non-owners from removing owners
+	targetUser, err := s.authRepo.GetUserByID(ctx, userID)
+	if err == nil && targetUser.Role == "owner" && actorRole != "owner" {
+		return errors.New("only owners can remove other owners")
+	}
+
+	// 4. Delete Membership
+	return s.userRepo.DeleteMembership(ctx, userID, tenantID)
 }
 
 func generateRandomToken(n int) (string, error) {
