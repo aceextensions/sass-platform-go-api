@@ -2,7 +2,9 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 
+	"github.com/aceextension/core/config"
 	"github.com/aceextension/identity/dto"
 	"github.com/aceextension/identity/middleware"
 	"github.com/aceextension/identity/service"
@@ -364,6 +366,13 @@ func (h *AuthHandler) SocialLoginCallback(c echo.Context) error {
 	res, err := h.authService.SocialLogin(c.Request().Context(), userMap)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Final step: Conditional Redirect for browser vs JSON for Apps
+	accept := c.Request().Header.Get("Accept")
+	if strings.Contains(accept, "text/html") {
+		redirectURL := config.GlobalConfig.AppBaseURL + "/login/success?accessToken=" + res.AccessToken + "&refreshToken=" + res.RefreshToken
+		return c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 	}
 
 	return c.JSON(http.StatusOK, res)

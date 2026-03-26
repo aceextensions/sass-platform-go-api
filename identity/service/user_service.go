@@ -200,7 +200,7 @@ func (s *userService) JoinTenant(ctx context.Context, data dto.JoinTenantDTO) er
 				user.Email = invite.Email
 			}
 			if invite.Phone != nil {
-				user.Phone = *invite.Phone
+				user.Phone = invite.Phone
 			}
 
 			authRepoTx := repository.NewAuthRepositoryWithTx(tr.GetTx())

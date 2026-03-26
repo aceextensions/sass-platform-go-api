@@ -81,7 +81,7 @@ func (s *authService) RegisterTenant(ctx context.Context, data dto.RegisterTenan
 		// 3b. Create User
 		user = models.User{
 			Name:         data.OwnerName,
-			Phone:        data.Phone,
+			Phone:        stringToPtr(data.Phone),
 			Email:        stringToPtr(data.Email),
 			PasswordHash: &passwordHash,
 			Role:         "owner", // Super-role across all accounts
@@ -157,7 +157,7 @@ func (s *authService) RegisterIndividual(ctx context.Context, data dto.RegisterI
 		// 2. Create User
 		user = models.User{
 			Name:         data.Name,
-			Phone:        data.Phone,
+			Phone:        stringToPtr(data.Phone),
 			Email:        stringToPtr(data.Email),
 			PasswordHash: &passwordHash,
 			Role:         "owner",

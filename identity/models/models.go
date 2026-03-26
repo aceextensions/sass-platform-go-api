@@ -54,7 +54,7 @@ type User struct {
 	TenantID     *uuid.UUID `json:"tenantId" db:"tenant_id"`
 	Name         string     `json:"name" db:"name"`
 	Email        *string    `json:"email" db:"email"`
-	Phone        string     `json:"phone" db:"phone"`
+	Phone        *string    `json:"phone" db:"phone"`
 	PasswordHash *string    `json:"-" db:"password_hash"`
 	Role         string     `json:"role" db:"role"`
 	IsVerified   bool       `json:"isVerified" db:"is_verified"`

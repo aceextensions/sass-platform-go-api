@@ -45,11 +45,16 @@ func main() {
 		log.Fatalf("Failed to hash password: %v", err)
 	}
 
+	var phonePtr *string
+	if *phone != "" {
+		phonePtr = phone
+	}
+
 	// 4. Create User Object
 	user := &models.User{
 		Name:         *name,
 		Email:        email,
-		Phone:        *phone,
+		Phone:        phonePtr,
 		PasswordHash: &hash,
 		Role:         *role,
 		IsVerified:   true, // Superusers are verified by default

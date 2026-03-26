@@ -7,10 +7,10 @@ import (
 )
 
 type RegisterTenantDTO struct {
-	TenantName string  `json:"tenantName" validate:"required,min=3,max=50"`
-	OwnerName  string  `json:"ownerName" validate:"required,min=2,max=100"`
-	Phone      string  `json:"phone" validate:"omitempty"`
-	Email      string  `json:"email" validate:"required,email"`
+	TenantName string `json:"tenantName" validate:"required,min=3,max=50"`
+	OwnerName  string `json:"ownerName" validate:"required,min=2,max=100"`
+	Phone      string `json:"phone" validate:"omitempty"`
+	Email      string `json:"email" validate:"required,email"`
 	Password   string `json:"password" validate:"required,min=6,max=50"`
 }
 
@@ -36,7 +36,7 @@ type UserResponse struct {
 	ID        uuid.UUID  `json:"id"`
 	Name      string     `json:"name"`
 	Email     *string    `json:"email"`
-	Phone     string     `json:"phone"`
+	Phone     *string    `json:"phone"`
 	Role      string     `json:"role"`
 	TenantID  *uuid.UUID `json:"tenantId"`
 	IsActive  bool       `json:"isActive"`
