@@ -49,9 +49,9 @@ func (m *TenancyModule) Init() error {
 
 	// 4. Register pools in Router
 	for _, t := range tenants {
-		if t.DatabaseURL != "" {
+		if t.DatabaseURL != nil && *t.DatabaseURL != "" {
 			fmt.Printf("➡️ Registering DB Pool for Tenant: %s (%s)\n", t.Name, t.ID)
-			if err := db.Router.RegisterTenantPool(t.ID, t.DatabaseURL); err != nil {
+			if err := db.Router.RegisterTenantPool(t.ID, *t.DatabaseURL); err != nil {
 				fmt.Printf("❌ Failed to register pool for %s: %v\n", t.Name, err)
 				// Continue with other tenants
 			}

@@ -17,11 +17,11 @@ const (
 type Tenant struct {
 	ID          uuid.UUID    `json:"id"`
 	Name        string       `json:"name"`
-	Email       string       `json:"email"`
-	Phone       string       `json:"phone"`
+	Email       *string      `json:"email,omitempty"`
+	Phone       *string      `json:"phone,omitempty"`
 	Status      TenantStatus `json:"status"`
-	DatabaseURL string       `json:"databaseUrl,omitempty"` // Per-tenant DB
-	SchemaName  string       `json:"schemaName,omitempty"`  // Per-tenant schema
+	DatabaseURL *string      `json:"databaseUrl,omitempty"` // Per-tenant DB
+	SchemaName  *string      `json:"schemaName,omitempty"`  // Per-tenant schema
 	Metadata    interface{}  `json:"metadata"`
 	Settings    interface{}  `json:"settings"` // JSONB configurations
 	CreatedAt   time.Time    `json:"createdAt"`

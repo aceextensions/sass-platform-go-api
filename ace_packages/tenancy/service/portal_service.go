@@ -87,14 +87,18 @@ func (s *portalService) ConfigureDatabase(ctx context.Context, tenantID uuid.UUI
 	}
 
 	// 1. If a new DB URL is provided, run migrations first
-	if dbURL != "" && dbURL != tenant.DatabaseURL {
+	currentURL := ""
+	if tenant.DatabaseURL != nil {
+		currentURL = *tenant.DatabaseURL
+	}
+	if dbURL != "" && dbURL != currentURL {
 		if err := s.migrationSvc.RunTenantMigration(ctx, dbURL); err != nil {
 			return fmt.Errorf("failed to migrate dedicated database: %w", err)
 		}
 	}
 
 	// 2. Update tenant record
-	tenant.DatabaseURL = dbURL
+	tenant.DatabaseURL = &dbURL
 	err = s.repo.Update(ctx, tenant)
 	if err != nil {
 		return err

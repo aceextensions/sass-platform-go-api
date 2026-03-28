@@ -3,6 +3,7 @@ package identity
 import (
 	"github.com/aceextension/core/extension"
 	"github.com/aceextension/identity/handler"
+	"github.com/aceextension/identity/middleware"
 	"github.com/aceextension/identity/repository"
 	"github.com/aceextension/identity/service"
 	"github.com/aceextension/notification"
@@ -30,7 +31,7 @@ func (m *IdentityModule) Init() error {
 }
 
 func (m *IdentityModule) RegisterRoutes(e *echo.Echo, g *echo.Group) error {
-	// 1. Versioned V1 Routes (/api/v1/auth)
+	// 1. Public Auth Routes (/api/v1/auth) — No token required
 	v1Auth := g.Group("/auth")
 	v1Auth.POST("/login", m.handler.Login)
 	v1Auth.POST("/register", m.handler.RegisterTenant)
@@ -39,11 +40,17 @@ func (m *IdentityModule) RegisterRoutes(e *echo.Echo, g *echo.Group) error {
 	v1Auth.POST("/refresh", m.handler.RefreshToken)
 	v1Auth.POST("/forgot-password", m.handler.ForgotPassword)
 	v1Auth.POST("/reset-password", m.handler.ResetPassword)
-	v1Auth.GET("/me", m.handler.GetMe)
 
-	// Social Login (Versioned)
+	// Social Login (Public)
 	v1Auth.GET("/:provider", m.handler.SocialLoginBegin)
 	v1Auth.GET("/:provider/callback", m.handler.SocialLoginCallback)
+
+	// 2. Protected Auth Routes (/api/v1/auth) — Bearer token required
+	v1AuthProtected := g.Group("/auth", middleware.JWTMiddleware)
+	v1AuthProtected.GET("/me", m.handler.GetMe)
+	v1AuthProtected.POST("/logout", m.handler.Logout)
+	v1AuthProtected.POST("/change-password", m.handler.ChangePassword)
+	v1AuthProtected.POST("/impersonate/:tenantId", m.handler.Impersonate)
 
 	return nil
 }
