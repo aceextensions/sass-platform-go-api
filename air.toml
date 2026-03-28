@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 
 [build]
   bin = "./tmp/main"
-  cmd = "cd api && swag init -g cmd/api/main.go -o docs --parseDependency --parseInternal --dir ./,../accounting,../crm,../catalog,../subscription,../notification,../fiscal,../identity,../inventory,../sales,../purchase && cd .. && go build -buildvcs=false -o ./tmp/main ./api/cmd/api/"
+  cmd = "cd api && swag init -g cmd/api/main.go -o docs --parseDependency --parseInternal --dir ./,../ace_packages/accounting,../ace_packages/crm,../ace_packages/catalog,../ace_packages/subscription,../ace_packages/notification,../ace_packages/fiscal,../ace_packages/identity,../ace_packages/inventory,../ace_packages/sales,../ace_packages/purchase,../ace_packages/audit,../ace_packages/quiz,../ace_packages/tenancy,../ace_packages/user-management && cd .. && go build -buildvcs=false -o ./tmp/main ./api/cmd/api/"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "node_modules", "api/docs"]
   exclude_file = []

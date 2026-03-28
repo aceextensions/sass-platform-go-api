@@ -1,0 +1,37 @@
+# AceExtension Framework Configuration
+
+NODE_ENV: "development"
+PORT: "4000"
+
+# Main Database (Multi-tenant SaaS storage)
+DATABASE_URL: "postgresql://aceextension:aceextension_dev@localhost:5432/aceextension"
+AUDIT_DATABASE_URL: "postgresql://aceextension:aceextension_audit@localhost:5433/aceextension_audit"
+
+# Module Configuration
+modules:
+  identity:
+    enabled: true
+    settings:
+      require_phone: true
+  tenancy:
+    enabled: true
+  user-management:
+    enabled: true
+  notification:
+    enabled: true
+  inventory:
+    enabled: false
+  accounting:
+    enabled: false
+
+# Plugin Configuration
+plugins:
+  official:
+    - name: "auth-2fa"
+      enabled: true
+      priority: 10
+    - name: "slack-notifications"
+      enabled: false
+      priority: 20
+      settings:
+        webhook_url: "${SLACK_WEBHOOK_URL}"

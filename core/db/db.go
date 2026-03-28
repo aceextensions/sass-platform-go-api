@@ -21,6 +21,7 @@ type QueryExecutor interface {
 var (
 	MainPool  *pgxpool.Pool
 	AuditPool *pgxpool.Pool
+	Router    *DBRouter
 )
 
 func Init(mainConnStr, auditConnStr string) {
@@ -50,6 +51,9 @@ func Init(mainConnStr, auditConnStr string) {
 		log.Fatalf("Audit database ping failed: %v\n", err)
 	}
 	fmt.Println("🚀 Connected to Audit Database")
+
+	// Initialize Router
+	Router = NewDBRouter(MainPool)
 }
 
 func Close() {
@@ -59,10 +63,24 @@ func Close() {
 	if AuditPool != nil {
 		AuditPool.Close()
 	}
+	if Router != nil {
+		// Close all tenant pools
+		Router.mu.Lock()
+		for _, pool := range Router.tenantPools {
+			pool.Close()
+		}
+		Router.mu.Unlock()
+	}
 }
 
 func BeginFunc(ctx context.Context, fn func(pgx.Tx) error) error {
-	tx, err := MainPool.Begin(ctx)
+	executor := GetExecutor(ctx)
+	pool, ok := executor.(*pgxpool.Pool)
+	if !ok {
+		return fmt.Errorf("executor is not a pgxpool.Pool, cannot begin transaction")
+	}
+
+	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return err
 	}

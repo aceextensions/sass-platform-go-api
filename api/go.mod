@@ -6,23 +6,23 @@ replace github.com/aceextension/common => ../common
 
 replace github.com/aceextension/core => ../core
 
-replace github.com/aceextension/identity => ../identity
+replace github.com/aceextension/identity => ../ace_packages/identity
 
-replace github.com/aceextension/notification => ../notification
+replace github.com/aceextension/notification => ../ace_packages/notification
 
-replace github.com/aceextension/subscription => ../subscription
+replace github.com/aceextension/subscription => ../ace_packages/subscription
 
-replace github.com/aceextension/accounting => ../accounting
+replace github.com/aceextension/accounting => ../ace_packages/accounting
 
-replace github.com/aceextension/fiscal => ../fiscal
+replace github.com/aceextension/fiscal => ../ace_packages/fiscal
 
-replace github.com/aceextension/inventory => ../inventory
+replace github.com/aceextension/inventory => ../ace_packages/inventory
 
-replace github.com/aceextension/sales => ../sales
+replace github.com/aceextension/sales => ../ace_packages/sales
 
-replace github.com/aceextension/purchase => ../purchase
+replace github.com/aceextension/purchase => ../ace_packages/purchase
 
-replace github.com/aceextension/quiz => ../quiz
+replace github.com/aceextension/quiz => ../ace_packages/quiz
 
 require (
 	github.com/aceextension/accounting v0.0.0

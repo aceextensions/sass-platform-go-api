@@ -1,19 +1,21 @@
 go 1.25.6
 
 use (
-	./accounting
+	./ace_packages/accounting
+	./ace_packages/audit
+	./ace_packages/catalog
+	./ace_packages/crm
+	./ace_packages/fiscal
+	./ace_packages/identity
+	./ace_packages/inventory
+	./ace_packages/notification
+	./ace_packages/purchase
+	./ace_packages/quiz
+	./ace_packages/sales
+	./ace_packages/subscription
+	./ace_packages/tenancy
+	./ace_packages/user-management
 	./api
-	./audit
-	./catalog
 	./common
 	./core
-	./crm
-	./fiscal
-	./identity
-	./inventory
-	./notification
-	./purchase
-	./quiz
-	./sales
-	./subscription
 )

@@ -1,0 +1,14 @@
+# AceExtension Tenancy Configuration
+
+isolation:
+  mode: shared  # shared (SaaS/RLS) | isolated (On-premise) | hybrid (MultiStore)
+
+workspaces:
+  enable_separate_schemas: true  # Each workspace gets own schema
+  enable_separate_databases: true # Each workspace gets own database
+  
+  # For on-premise MultiStore compatibility
+  multi_store_compatibility:
+    enabled: true
+    store_group_maps_to: workspace
+    store_view_maps_to: workspace_variant

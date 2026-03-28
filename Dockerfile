@@ -15,9 +15,9 @@ ENV GOPRIVATE=github.com/aceextension/*
 COPY sass-platform-go-api/go.work sass-platform-go-api/go.work.sum ./sass-platform-go-api/
 COPY sass-platform-go-api/common/go.mod sass-platform-go-api/common/go.sum ./sass-platform-go-api/common/
 COPY sass-platform-go-api/core/go.mod sass-platform-go-api/core/go.sum ./sass-platform-go-api/core/
-COPY sass-platform-go-api/identity/go.mod sass-platform-go-api/identity/go.sum ./sass-platform-go-api/identity/
-COPY sass-platform-go-api/notification/go.mod sass-platform-go-api/notification/go.sum ./sass-platform-go-api/notification/
-COPY sass-platform-go-api/subscription/go.mod sass-platform-go-api/subscription/go.sum ./sass-platform-go-api/subscription/
+COPY sass-platform-go-api/ace_packages/identity/go.mod sass-platform-go-api/ace_packages/identity/go.sum ./sass-platform-go-api/ace_packages/identity/
+COPY sass-platform-go-api/ace_packages/notification/go.mod sass-platform-go-api/ace_packages/notification/go.sum ./sass-platform-go-api/ace_packages/notification/
+COPY sass-platform-go-api/ace_packages/subscription/go.mod sass-platform-go-api/ace_packages/subscription/go.sum ./sass-platform-go-api/ace_packages/subscription/
 COPY sass-platform-go-api/api/go.mod sass-platform-go-api/api/go.sum ./sass-platform-go-api/api/
 
 
