@@ -49,6 +49,8 @@ import (
 	"github.com/aceextension/quiz"
 	quizHandler "github.com/aceextension/quiz/handler"
 	"github.com/aceextension/sociallogin"
+	"github.com/aceextension/crm"
+	crmHandler "github.com/aceextension/crm/handler"
 )
 
 func main() {
@@ -87,7 +89,7 @@ func main() {
 	tenantRepo := repository.NewTenantRepository()
 	userRepo := repository.NewUserRepository()
 
-	authService := service.NewAuthService(authRepo, tenantRepo)
+	authService := service.NewAuthService(authRepo, tenantRepo, notification.Service)
 	userService := service.NewUserService(userRepo, tenantRepo, authRepo, notification.Service)
 
 	authHandler := handler.NewAuthHandler(authService)
@@ -109,6 +111,13 @@ func main() {
 	e.GET("/swagger", func(c echo.Context) error {
 		return c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
 	})
+	e.GET("/", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{
+			"message": "AceExtension Go API is running",
+			"status":  "healthy",
+		})
+	})
+
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	// Routes
@@ -167,6 +176,7 @@ func main() {
 	users.GET("/invitations", userHandler.ListInvitations)
 	users.POST("/invite", userHandler.InviteUser)
 	users.DELETE("/invitations/:id", userHandler.RevokeInvitation)
+	users.POST("/invitations/:id/resend", userHandler.ResendInvitation)
 	users.DELETE("/:id", userHandler.RemoveMember)
 	users.POST("/join", userHandler.JoinTenant) // Join is public but with token
 
@@ -254,6 +264,12 @@ func main() {
 		purchase.Init(pService)
 		purchaseH := purchaseHandler.NewPurchaseHandler(pService)
 		purchaseHandler.RegisterRoutes(api.Group("/v1"), purchaseH)
+	}
+
+	// 10b. CRM Module
+	if cfg.EnableCRM {
+		crm.Init(notification.Service)
+		crmHandler.RegisterRoutes(e)
 	}
 
 	// 11. Quiz Module

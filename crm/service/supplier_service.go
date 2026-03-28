@@ -10,6 +10,8 @@ import (
 	crmDomain "github.com/aceextension/crm/domain"
 	"github.com/aceextension/crm/repository"
 	"github.com/aceextension/fiscal"
+	"github.com/aceextension/common/templates"
+	notifService "github.com/aceextension/notification/service"
 	"github.com/google/uuid"
 )
 
@@ -27,13 +29,15 @@ type SupplierService interface {
 
 // supplierService implements SupplierService
 type supplierService struct {
-	repo repository.SupplierRepository
+	repo      repository.SupplierRepository
+	notifServ notifService.NotificationService
 }
 
 // NewSupplierService creates a new supplier service
-func NewSupplierService(repo repository.SupplierRepository) SupplierService {
+func NewSupplierService(repo repository.SupplierRepository, notifServ notifService.NotificationService) SupplierService {
 	return &supplierService{
-		repo: repo,
+		repo:      repo,
+		notifServ: notifServ,
 	}
 }
 
@@ -66,6 +70,27 @@ func (s *supplierService) Create(ctx context.Context, supplier *crmDomain.Suppli
 		"name":          supplier.Name,
 		"email":         supplier.Email,
 	}, auditCtx)
+
+	// Send Welcome Email if supplier has an email
+	if supplier.Email != nil && *supplier.Email != "" {
+		templateVars := map[string]interface{}{
+			"name":        supplier.Name,
+			"tenant_name": "Our Store", // Default fallback
+			"subject":     "New Supplier Registration",
+		}
+		
+		fullTemplate := templates.Wrap(CustomerWelcomeTemplate) // Reuse or create SupplierWelcomeTemplate? 
+		// User asked for "most modern templates", I'll reuse the style.
+
+		s.notifServ.Send(ctx, notifService.SendRequest{
+			TenantID:  supplier.TenantID,
+			Channel:   "email",
+			Recipient: *supplier.Email,
+			Content:   fullTemplate,
+			Variables: templateVars,
+			Priority:  "high",
+		})
+	}
 
 	return nil
 }

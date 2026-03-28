@@ -10,6 +10,8 @@ import (
 	"github.com/aceextension/identity/dto"
 	"github.com/aceextension/identity/models"
 	"github.com/aceextension/identity/repository"
+	notifService "github.com/aceextension/notification/service"
+	"github.com/aceextension/common/templates"
 	"github.com/google/uuid"
 )
 
@@ -31,12 +33,14 @@ type AuthService interface {
 type authService struct {
 	authRepo   repository.AuthRepository
 	tenantRepo repository.TenantRepository
+	notifServ  notifService.NotificationService
 }
 
-func NewAuthService(authRepo repository.AuthRepository, tenantRepo repository.TenantRepository) AuthService {
+func NewAuthService(authRepo repository.AuthRepository, tenantRepo repository.TenantRepository, notifServ notifService.NotificationService) AuthService {
 	return &authService{
 		authRepo:   authRepo,
 		tenantRepo: tenantRepo,
+		notifServ:  notifServ,
 	}
 }
 
@@ -104,7 +108,28 @@ func (s *authService) RegisterTenant(ctx context.Context, data dto.RegisterTenan
 			Status:   "active",
 		}
 
-		return tr.CreateMembership(ctx, membership)
+		if err := tr.CreateMembership(ctx, membership); err != nil {
+			return err
+		}
+
+		// 3d. Trigger Welcome Email (background)
+		templateVars := map[string]interface{}{
+			"name":           user.Name,
+			"dashboard_link": config.GlobalConfig.AppBaseURL + "/dashboard",
+			"subject":        "Welcome to Practixa!",
+		}
+		fullTemplate := templates.Wrap(WelcomeTemplate)
+
+		s.notifServ.Send(ctx, notifService.SendRequest{
+			TenantID:  tenant.ID,
+			Channel:   "email",
+			Recipient: *user.Email,
+			Content:   fullTemplate,
+			Variables: templateVars,
+			Priority:  "high",
+		})
+
+		return nil
 	})
 
 	if err != nil {
@@ -180,7 +205,28 @@ func (s *authService) RegisterIndividual(ctx context.Context, data dto.RegisterI
 			Status:   "active",
 		}
 
-		return tr.CreateMembership(ctx, membership)
+		if err := tr.CreateMembership(ctx, membership); err != nil {
+			return err
+		}
+
+		// 4. Trigger Welcome Email
+		templateVars := map[string]interface{}{
+			"name":           user.Name,
+			"dashboard_link": config.GlobalConfig.AppBaseURL + "/dashboard",
+			"subject":        "Welcome to Practixa!",
+		}
+		fullTemplate := templates.Wrap(WelcomeTemplate)
+
+		s.notifServ.Send(ctx, notifService.SendRequest{
+			TenantID:  tenant.ID,
+			Channel:   "email",
+			Recipient: *user.Email,
+			Content:   fullTemplate,
+			Variables: templateVars,
+			Priority:  "high",
+		})
+
+		return nil
 	})
 
 	if err != nil {
@@ -423,7 +469,27 @@ func (s *authService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 		return err
 	}
 
-	return s.authRepo.UpdateUserPassword(ctx, userID, newHash)
+	if err := s.authRepo.UpdateUserPassword(ctx, userID, newHash); err != nil {
+		return err
+	}
+
+	// Trigger Password Changed Email
+	templateVars := map[string]interface{}{
+		"dashboard_link": config.GlobalConfig.AppBaseURL + "/dashboard",
+		"subject":        "Your Practixa password was changed",
+	}
+	fullTemplate := templates.Wrap(PasswordChangedTemplate)
+
+	s.notifServ.Send(ctx, notifService.SendRequest{
+		TenantID:  *user.TenantID,
+		Channel:   "email",
+		Recipient: *user.Email,
+		Content:   fullTemplate,
+		Variables: templateVars,
+		Priority:  "high",
+	})
+
+	return nil
 }
 
 func (s *authService) ForgotPassword(ctx context.Context, data dto.ForgotPasswordDTO) error {
@@ -438,6 +504,23 @@ func (s *authService) ForgotPassword(ctx context.Context, data dto.ForgotPasswor
 	if err := s.authRepo.UpdateOTP(ctx, user.ID, &otp, &expiresAt); err != nil {
 		return err
 	}
+
+	// Trigger Password Reset Email
+	templateVars := map[string]interface{}{
+		"name":       user.Name,
+		"otp":        otp,
+		"reset_link": config.GlobalConfig.AppBaseURL + "/reset-password?email=" + *user.Email,
+		"subject":    "Reset your Practixa password",
+	}
+	fullTemplate := templates.Wrap(InvitationTemplate)
+	s.notifServ.Send(ctx, notifService.SendRequest{
+		TenantID:  *user.TenantID,
+		Channel:   "email",
+		Recipient: *user.Email,
+		Content:   fullTemplate,
+		Variables: templateVars,
+		Priority:  "high",
+	})
 
 	fmt.Printf("📧 Password Reset OTP for %s: %s\n", data.Identifier, otp)
 	return nil
@@ -462,13 +545,33 @@ func (s *authService) ResetPassword(ctx context.Context, data dto.ResetPasswordD
 		return err
 	}
 
-	return s.authRepo.WithTransaction(ctx, func(repo repository.AuthRepository) error {
+	err = s.authRepo.WithTransaction(ctx, func(repo repository.AuthRepository) error {
 		if err := repo.UpdateUserPassword(ctx, user.ID, newHash); err != nil {
 			return err
 		}
 		// Clear OTP
 		return repo.UpdateOTP(ctx, user.ID, nil, nil)
 	})
+
+	if err == nil {
+		// Trigger Password Changed Email
+		templateVars := map[string]interface{}{
+			"dashboard_link": config.GlobalConfig.AppBaseURL + "/dashboard",
+			"subject":        "Your Practixa password was reset",
+		}
+		fullTemplate := templates.Wrap(PasswordChangedTemplate)
+
+		s.notifServ.Send(ctx, notifService.SendRequest{
+			TenantID:  *user.TenantID,
+			Channel:   "email",
+			Recipient: *user.Email,
+			Content:   fullTemplate,
+			Variables: templateVars,
+			Priority:  "high",
+		})
+	}
+
+	return err
 }
 
 func (s *authService) Impersonate(ctx context.Context, tenantID uuid.UUID, adminUserID uuid.UUID) (*dto.AuthResponse, error) {

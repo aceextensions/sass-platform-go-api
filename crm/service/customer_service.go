@@ -10,6 +10,8 @@ import (
 	crmDomain "github.com/aceextension/crm/domain"
 	"github.com/aceextension/crm/repository"
 	"github.com/aceextension/fiscal"
+	"github.com/aceextension/common/templates"
+	notifService "github.com/aceextension/notification/service"
 	"github.com/google/uuid"
 )
 
@@ -27,13 +29,15 @@ type CustomerService interface {
 
 // customerService implements CustomerService
 type customerService struct {
-	repo repository.CustomerRepository
+	repo      repository.CustomerRepository
+	notifServ notifService.NotificationService
 }
 
 // NewCustomerService creates a new customer service
-func NewCustomerService(repo repository.CustomerRepository) CustomerService {
+func NewCustomerService(repo repository.CustomerRepository, notifServ notifService.NotificationService) CustomerService {
 	return &customerService{
-		repo: repo,
+		repo:      repo,
+		notifServ: notifServ,
 	}
 }
 
@@ -66,6 +70,28 @@ func (s *customerService) Create(ctx context.Context, customer *crmDomain.Custom
 		"name":          customer.Name,
 		"email":         customer.Email,
 	}, auditCtx)
+
+	// Send Welcome Email if customer has an email
+	if customer.Email != nil && *customer.Email != "" {
+		templateVars := map[string]interface{}{
+			"name":        customer.Name,
+			"tenant_name": "Your Store", // Default fallback
+			"subject":     "Welcome to our service",
+		}
+		
+		// Note: Ideally fetch tenant name from tenant repo here
+		
+		fullTemplate := templates.Wrap(CustomerWelcomeTemplate)
+
+		s.notifServ.Send(ctx, notifService.SendRequest{
+			TenantID:  customer.TenantID,
+			Channel:   "email",
+			Recipient: *customer.Email,
+			Content:   fullTemplate,
+			Variables: templateVars,
+			Priority:  "high",
+		})
+	}
 
 	return nil
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/aceextension/identity/repository"
 	notifDomain "github.com/aceextension/notification/domain"
 	notifService "github.com/aceextension/notification/service"
+	"github.com/aceextension/common/templates"
 	"github.com/google/uuid"
 )
 
@@ -25,6 +26,7 @@ type UserService interface {
 	JoinTenant(ctx context.Context, data dto.JoinTenantDTO) error
 	ListInvitations(ctx context.Context, tenantID uuid.UUID) ([]dto.InvitationResponse, error)
 	RevokeInvitation(ctx context.Context, actorRole string, tenantID uuid.UUID, id uuid.UUID) error
+	ResendInvitation(ctx context.Context, actorRole string, tenantID uuid.UUID, id uuid.UUID) error
 	RemoveMember(ctx context.Context, actorID uuid.UUID, actorRole string, tenantID uuid.UUID, userID uuid.UUID) error
 }
 
@@ -135,20 +137,37 @@ func (s *userService) InviteUser(ctx context.Context, actorID uuid.UUID, tenantI
 	// 4. Send Notification
 	channel := notifDomain.ChannelEmail
 	recipient := data.Email
-	if data.Phone != "" {
+	if recipient == "" && data.Phone != "" {
 		channel = notifDomain.ChannelSMS
 		recipient = data.Phone
 	}
 
 	inviteLink := config.GlobalConfig.AppBaseURL + "/join?token=" + invite.Token
-	appName := "Practixa"
-	content := "You have been invited to join " + appName + " as a " + data.Role + ". Click the link to join: " + inviteLink
+
+	// Create Pongo2 context for the template
+	templateVars := map[string]interface{}{
+		"inviter_name": "Administrator",
+		"tenant_name":  "Your Workspace",
+		"role":         data.Role,
+		"invite_link":  inviteLink,
+		"subject":      "You've been invited to Practixa",
+	}
+
+	// Fetch tenant info for the beautiful template
+	if tenant, err := s.tenantRepo.GetTenantByID(ctx, invite.TenantID); err == nil {
+		templateVars["tenant_name"] = tenant.Name
+	}
+
+	// Render the content using the modular templates
+	// We wrap the invitation template in the base layout
+	fullTemplate := templates.Wrap(InvitationTemplate)
 
 	s.notifServ.Send(ctx, notifService.SendRequest{
 		TenantID:  tenantID,
 		Channel:   channel,
 		Recipient: recipient,
-		Content:   content,
+		Content:   fullTemplate,
+		Variables: templateVars,
 		Priority:  notifDomain.PriorityHigh,
 	})
 
@@ -257,6 +276,63 @@ func (s *userService) RevokeInvitation(ctx context.Context, actorRole string, te
 	}
 
 	return s.userRepo.DeleteInvitation(ctx, id, tenantID)
+}
+
+func (s *userService) ResendInvitation(ctx context.Context, actorRole string, tenantID uuid.UUID, id uuid.UUID) error {
+	// 1. RBAC Check
+	if actorRole != "owner" && actorRole != "manager" {
+		return errors.New("unauthorized: only owners and managers can resend invitations")
+	}
+
+	// 2. Fetch Translation
+	invite, err := s.userRepo.GetInvitationByID(ctx, id, tenantID)
+	if err != nil {
+		return errors.New("invitation not found")
+	}
+
+	if invite.Status != "pending" {
+		return errors.New("cannot resend: invitation is already " + invite.Status)
+	}
+
+	// 3. Re-send Notification
+	channel := notifDomain.ChannelEmail
+	recipient := ""
+	if invite.Email != nil {
+		recipient = *invite.Email
+	} else if invite.Phone != nil {
+		channel = notifDomain.ChannelSMS
+		recipient = *invite.Phone
+	}
+
+	if recipient == "" {
+		return errors.New("no recipient found for invitation")
+	}
+
+	inviteLink := config.GlobalConfig.AppBaseURL + "/join?token=" + invite.Token
+
+	templateVars := map[string]interface{}{
+		"inviter_name": "Administrator",
+		"tenant_name":  "Your Workspace",
+		"role":         invite.Role,
+		"invite_link":  inviteLink,
+		"subject":      "Reminder: You've been invited to Practixa",
+	}
+
+	if tenant, err := s.tenantRepo.GetTenantByID(ctx, invite.TenantID); err == nil {
+		templateVars["tenant_name"] = tenant.Name
+	}
+
+	fullTemplate := templates.Wrap(InvitationTemplate)
+
+	_, err = s.notifServ.Send(ctx, notifService.SendRequest{
+		TenantID:  tenantID,
+		Channel:   channel,
+		Recipient: recipient,
+		Content:   fullTemplate,
+		Variables: templateVars,
+		Priority:  notifDomain.PriorityHigh,
+	})
+	return err
 }
 
 func (s *userService) RemoveMember(ctx context.Context, actorID uuid.UUID, actorRole string, tenantID uuid.UUID, userID uuid.UUID) error {

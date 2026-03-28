@@ -13,6 +13,8 @@ import (
 	"github.com/aceextension/notifier"
 	"github.com/aceextension/notifier/email"
 	"github.com/aceextension/notifier/slack"
+	"github.com/flosch/pongo2/v6"
+	"github.com/aceextension/common/templates"
 	"github.com/google/uuid"
 )
 
@@ -33,13 +35,30 @@ func NewNotificationService(repo repository.NotificationRepository, templateRepo
 func (s *notificationService) Send(ctx context.Context, req SendRequest) (*domain.Notification, error) {
 	content := req.Content
 
-	// Render template if ID is provided
+	// Render specific template if ID is provided
 	if req.TemplateID != nil {
 		template, err := s.templateRepo.GetByID(ctx, *req.TemplateID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get template: %w", err)
+		if err == nil {
+			content = template.Body
 		}
-		content = renderTemplate(template.Body, req.Variables)
+	}
+
+	// 1. Render the specific content (e.g. invitation body)
+	content = renderTemplate(content, req.Variables)
+
+	// 2. Wrap in base layout if it's an email
+	if req.Channel == domain.ChannelEmail {
+		// Prepare variables for base layout
+		baseVars := make(map[string]interface{})
+		if req.Variables != nil {
+			for k, v := range req.Variables {
+				baseVars[k] = v
+			}
+		}
+		baseVars["content"] = content
+		
+		// Use the shared base layout
+		content = renderTemplate(templates.BaseEmailLayout, baseVars)
 	}
 
 	// Create notification record
@@ -47,7 +66,7 @@ func (s *notificationService) Send(ctx context.Context, req SendRequest) (*domai
 	notification.UserID = req.UserID
 	notification.Priority = req.Priority
 	notification.TemplateID = req.TemplateID
-	notification.Subject = getSubject(req, content)
+	notification.Subject = getSubject(req, req.Variables)
 
 	if err := s.repo.Create(ctx, notification); err != nil {
 		return nil, fmt.Errorf("failed to create notification record: %w", err)
@@ -109,7 +128,7 @@ func (s *notificationService) sendInstant(ctx context.Context, n *domain.Notific
 		})
 	} else if n.Channel == domain.ChannelSMS {
 		// Mock SMS OR fallback to Slack if webhook config exists
-		if config.GlobalConfig.SlackWebhookURL != "" {
+		if config.GlobalConfig.SlackWebhookURL != "" && !strings.Contains(config.GlobalConfig.SlackWebhookURL, "your-slack-webhook-url") {
 			ntr = slack.New(config.GlobalConfig.SlackWebhookURL)
 		} else if config.GlobalConfig.Env == "development" {
 			log.Printf("MOCK SMS to %s: %s", n.Recipient, n.Content)
@@ -150,13 +169,24 @@ func (s *notificationService) CreateTemplate(ctx context.Context, template *doma
 	return s.templateRepo.Create(ctx, template)
 }
 
-// Simple template renderer {{key}} -> value
+// Advanced template renderer using Pongo2
 func renderTemplate(body string, variables map[string]interface{}) string {
-	for k, v := range variables {
-		placeholder := fmt.Sprintf("{{%s}}", k)
-		body = strings.ReplaceAll(body, placeholder, fmt.Sprintf("%v", v))
+	tpl, err := pongo2.FromString(body)
+	if err != nil {
+		log.Printf("Error parsing template: %v", err)
+		return body // Fallback to raw if logic fails
 	}
-	return body
+
+	// Create pongo2 context from map
+	ctx := pongo2.Context(variables)
+
+	out, err := tpl.Execute(ctx)
+	if err != nil {
+		log.Printf("Error executing template: %v", err)
+		return body
+	}
+
+	return out
 }
 
 func (s *notificationService) GetPendingNotifications(ctx context.Context) ([]*domain.Notification, error) {
@@ -164,8 +194,11 @@ func (s *notificationService) GetPendingNotifications(ctx context.Context) ([]*d
 	return s.repo.GetPending(ctx, 50)
 }
 
-func getSubject(req SendRequest, content string) *string {
-	// Logic to extract subject, e.g., from template or request
-	// For now, return nil or a pointer to a string if provided
+func getSubject(req SendRequest, variables map[string]interface{}) *string {
+	if variables != nil {
+		if sub, ok := variables["subject"].(string); ok {
+			return &sub
+		}
+	}
 	return nil
 }

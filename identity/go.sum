@@ -1,12 +1,12 @@
 cloud.google.com/go/compute/metadata v0.9.0 h1:pDUj4QMoPejqq20dK0Pg2N4yG9zIkYGdBtwLoEkH9Zs=
 cloud.google.com/go/compute/metadata v0.9.0/go.mod h1:E0bWwX5wTnLPedCKqk3pJmVgCBSM6qQI1yTBdEb3C10=
-github.com/aceextension/notifier v0.1.1 h1:9/NvYmk9uYzqTy63WMpNwgn9Azj5vTa/yptOtQgzyZU=
-github.com/aceextension/notifier v0.1.1/go.mod h1:P8kH5FAe2EdWhYjQWydA3goITuuUVdBFNzcslwvCsPk=
-github.com/aceextension/sociallogin v0.1.0 h1:jTsIcEdBDaXhb5a50eKUc7ePWeGVduMnsBC2LKmlJHc=
-github.com/aceextension/sociallogin v0.1.0/go.mod h1:1YIr2dBi4TmjA6FGtabwKZ/TcwYT51vhaS0otyaVtqw=
+github.com/aceextension/notifier v0.1.2 h1:jmFanY21VCizHQN6GSPwzpzxfycWWvLo0zkei+9tpRE=
+github.com/aceextension/sociallogin v0.1.2 h1:aLGpPGDZQrUCAxoYm1NzleO49gamPpgPM+LXa8nVJjE=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/flosch/pongo2/v6 v6.0.0 h1:lsGru8IAzHgIAw6H2m4PCyleO58I40ow6apih0WprMU=
+github.com/flosch/pongo2/v6 v6.0.0/go.mod h1:CuDpFm47R0uGGE7z13/tTlt1Y6zdxvr2RLT5LJhsHEU=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S9k=

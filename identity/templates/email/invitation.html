@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2 style="margin-top: 0; color: #1e293b; font-weight: 700;">You've been invited!</h2>
+    <p>Hello,</p>
+    <p><strong>{{ inviter_name }}</strong> has invited you to join the <strong>{{ tenant_name }}</strong> workspace on <strong>Practixa</strong> as a <strong>{{ role }}</strong>.</p>
+    <p>Practixa helps your team move with antigravity—managing products, categories, and accounting in one seamless interface.</p>
+    <p style="text-align: center;">
+        <a href="{{ invite_link }}" class="button">Accept Invitation</a>
+    </p>
+    <p style="margin-top: 32px; font-size: 14px; color: #64748b;">
+        If the button above doesn't work, copy and paste this link into your browser:<br>
+        <span style="word-break: break-all; color: #059669;">{{ invite_link }}</span>
+    </p>
+    <p style="margin-top: 24px;">Welcome to the future of workspace management!</p>
+    <p>Best regards,<br>The Practixa Team</p>
+{% endblock %}

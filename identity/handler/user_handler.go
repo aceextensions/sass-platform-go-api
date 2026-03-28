@@ -215,3 +215,30 @@ func (h *UserHandler) RemoveMember(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Member removed successfully"})
 }
+
+// ResendInvitation godoc
+// @Summary Resend an invitation
+// @Description Re-trigger the invitation email for a pending invite
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "Invitation ID"
+// @Success 200 {object} map[string]string
+// @Security BearerAuth
+// @Router /users/invitations/{id}/resend [post]
+func (h *UserHandler) ResendInvitation(c echo.Context) error {
+	idRaw := c.Param("id")
+	id, err := uuid.Parse(idRaw)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid invitation id"})
+	}
+
+	user := c.Get("user").(middleware.AuthUser)
+	tenantID, _ := uuid.Parse(user.TenantID)
+
+	if err := h.userService.ResendInvitation(c.Request().Context(), user.Role, tenantID, id); err != nil {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"message": "Invitation resent successfully"})
+}

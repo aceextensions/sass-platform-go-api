@@ -1,9 +1,8 @@
-
 services:
   api-go:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: sass-platform-go-api/Dockerfile
       target: development
     container_name: aceextension-api-go
     environment:
@@ -16,7 +15,7 @@ services:
     ports:
       - "5000:4000"
     volumes:
-      - .:/app
+      - .:/app/sass-platform-go-api
     networks:
       - aceextension-network
 

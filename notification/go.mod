@@ -6,7 +6,8 @@ replace github.com/aceextension/core => ../core
 
 require (
 	github.com/aceextension/core v0.0.0
-	github.com/aceextension/notifier v0.1.1
+	github.com/aceextension/notifier v0.1.2
+	github.com/flosch/pongo2/v6 v6.0.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/labstack/echo/v4 v4.15.1

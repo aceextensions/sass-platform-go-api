@@ -34,6 +34,7 @@ type Config struct {
 	EnableAccounting   bool   `mapstructure:"ENABLE_ACCOUNTING"`
 	EnableSales        bool   `mapstructure:"ENABLE_SALES"`
 	EnablePurchase     bool   `mapstructure:"ENABLE_PURCHASE"`
+	EnableCRM          bool   `mapstructure:"ENABLE_CRM"`
 }
 
 var GlobalConfig *Config
@@ -58,6 +59,7 @@ func Load() *Config {
 	viper.SetDefault("ENABLE_ACCOUNTING", false)
 	viper.SetDefault("ENABLE_SALES", false)
 	viper.SetDefault("ENABLE_PURCHASE", false)
+	viper.SetDefault("ENABLE_CRM", false)
 
 	config := &Config{}
 	err := viper.Unmarshal(config)

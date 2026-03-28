@@ -8,23 +8,29 @@ ENV CGO_ENABLED=0
 
 # Install build dependencies
 RUN apk add --no-cache git
+ENV GOPRIVATE=github.com/aceextension/*
 
-# Copy the workspace and modules
-COPY go.work go.work.sum ./
-COPY common/go.mod common/go.sum ./common/
-COPY core/go.mod core/go.sum ./core/
-COPY identity/go.mod identity/go.sum ./identity/
-COPY notification/go.mod notification/go.sum ./notification/
-COPY subscription/go.mod subscription/go.sum ./subscription/
-COPY api/go.mod api/go.sum ./api/
+# 1. Mirror Host Structure for Workspace
+# Copy go.work and module definitions first for caching
+COPY sass-platform-go-api/go.work sass-platform-go-api/go.work.sum ./sass-platform-go-api/
+COPY sass-platform-go-api/common/go.mod sass-platform-go-api/common/go.sum ./sass-platform-go-api/common/
+COPY sass-platform-go-api/core/go.mod sass-platform-go-api/core/go.sum ./sass-platform-go-api/core/
+COPY sass-platform-go-api/identity/go.mod sass-platform-go-api/identity/go.sum ./sass-platform-go-api/identity/
+COPY sass-platform-go-api/notification/go.mod sass-platform-go-api/notification/go.sum ./sass-platform-go-api/notification/
+COPY sass-platform-go-api/subscription/go.mod sass-platform-go-api/subscription/go.sum ./sass-platform-go-api/subscription/
+COPY sass-platform-go-api/api/go.mod sass-platform-go-api/api/go.sum ./sass-platform-go-api/api/
 
-# Download dependencies
+
+# Sync workspace (this uses the mirrored structure)
+WORKDIR /app/sass-platform-go-api
 RUN go work sync
 
-# Copy source code
-COPY . .
+# 2. Copy Full Source
+WORKDIR /app
+COPY sass-platform-go-api ./sass-platform-go-api
 
-# Build the application
+# 3. Build the application
+WORKDIR /app/sass-platform-go-api
 RUN go build -buildvcs=false -o /app/api-bin ./api/cmd/api/main.go
 
 # Production stage
@@ -50,7 +56,11 @@ CMD ["/app/api"]
 # Development stage
 FROM golang:1.25.6-alpine AS development
 
+# Mirror Host Structure for Development
 WORKDIR /app
+COPY sass-platform-go-api ./sass-platform-go-api
+
+WORKDIR /app/sass-platform-go-api
 
 # Install build dependencies
 RUN apk add --no-cache git

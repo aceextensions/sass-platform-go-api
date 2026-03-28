@@ -9,9 +9,10 @@ replace github.com/aceextension/core => ../core
 replace github.com/aceextension/notification => ../notification
 
 require (
+	github.com/aceextension/common v0.0.0-00010101000000-000000000000
 	github.com/aceextension/core v0.0.0
 	github.com/aceextension/notification v0.0.0
-	github.com/aceextension/sociallogin v0.1.1
+	github.com/aceextension/sociallogin v0.1.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.8.0
@@ -21,7 +22,8 @@ require (
 
 require (
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
-	github.com/aceextension/notifier v0.1.1 // indirect
+	github.com/aceextension/notifier v0.1.2 // indirect
+	github.com/flosch/pongo2/v6 v6.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-chi/chi/v5 v5.2.5 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect

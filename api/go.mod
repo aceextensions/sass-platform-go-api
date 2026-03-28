@@ -40,13 +40,18 @@ require (
 )
 
 require (
+	github.com/aceextension/common v0.0.0-00010101000000-000000000000 // indirect
+	github.com/flosch/pongo2/v6 v6.0.0 // indirect
+)
+
+require (
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/aceextension/fiscal v0.0.0 // indirect
-	github.com/aceextension/notifier v0.1.1 // indirect
-	github.com/aceextension/sociallogin v0.1.1 // indirect
+	github.com/aceextension/notifier v0.1.2 // indirect
+	github.com/aceextension/sociallogin v0.1.2
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
