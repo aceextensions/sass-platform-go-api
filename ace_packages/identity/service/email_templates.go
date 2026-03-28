@@ -46,11 +46,23 @@ const (
 	PasswordChangedTemplate = `
 <h2 style="margin-top: 0; color: #1e293b; font-weight: 700;">Password Changed Successfully</h2>
 <p>Hello,</p>
-<p>This is a confirmation that the password for your Practixa account has been successfully changed.</p>
+<p>This is a confirmation that the password for your account has been successfully changed.</p>
 <p>If you did not make this change, please contact our support team immediately or reset your password to secure your account.</p>
 <p style="text-align: center;">
     <a href="{{ dashboard_link }}" class="button">Go to Dashboard</a>
 </p>
-<p>Best regards,<br>The Practixa Team</p>
+<p>Best regards,<br>The Support Team</p>
+`
+
+	VerifyOTPTemplate = `
+<h2 style="margin-top: 0; color: #1e293b; font-weight: 700;">Verify Your Account</h2>
+<p>Hello <strong>{{ name }}</strong>,</p>
+<p>Thank you for registering! Please use the verification code below to complete your registration:</p>
+<div style="text-align: center; margin: 32px 0;">
+    <span style="display: inline-block; font-size: 32px; font-weight: 700; letter-spacing: 8px; padding: 16px 32px; background: #f1f5f9; border-radius: 12px; color: #1e293b; border: 2px dashed #cbd5e1;">{{ otp }}</span>
+</div>
+<p style="text-align: center; font-size: 14px; color: #64748b;">This code will expire in <strong>10 minutes</strong>.</p>
+<p>If you didn't create an account, you can safely ignore this email.</p>
+<p>Best regards,<br>The Support Team</p>
 `
 )

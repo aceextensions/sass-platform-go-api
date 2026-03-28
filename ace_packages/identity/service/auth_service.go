@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aceextension/common/templates"
 	"github.com/aceextension/core/config"
 	"github.com/aceextension/identity/dto"
 	"github.com/aceextension/identity/models"
 	"github.com/aceextension/identity/repository"
+	notifDomain "github.com/aceextension/notification/domain"
 	notifService "github.com/aceextension/notification/service"
-	"github.com/aceextension/common/templates"
 	"github.com/google/uuid"
 )
 
@@ -57,7 +58,7 @@ func (s *authService) RegisterTenant(ctx context.Context, data dto.RegisterTenan
 	}
 
 	// 3. Generate OTP
-	otp := "123456" // Default for dev as per Bun implementation
+	otp := GenerateOTP()
 	otpExpiresAt := time.Now().Add(10 * time.Minute)
 
 	var user models.User
@@ -112,21 +113,21 @@ func (s *authService) RegisterTenant(ctx context.Context, data dto.RegisterTenan
 			return err
 		}
 
-		// 3d. Trigger Welcome Email (background)
+		// 3d. Send OTP Verification Email
 		templateVars := map[string]interface{}{
-			"name":           user.Name,
-			"dashboard_link": config.GlobalConfig.AppBaseURL + "/dashboard",
-			"subject":        "Welcome to Practixa!",
+			"name":    user.Name,
+			"otp":     otp,
+			"subject": "Verify your account",
 		}
-		fullTemplate := templates.Wrap(WelcomeTemplate)
+		fullTemplate := templates.Wrap(VerifyOTPTemplate)
 
 		s.notifServ.Send(ctx, notifService.SendRequest{
 			TenantID:  tenant.ID,
-			Channel:   "email",
+			Channel:   notifDomain.ChannelEmail,
 			Recipient: *user.Email,
 			Content:   fullTemplate,
 			Variables: templateVars,
-			Priority:  "high",
+			Priority:  notifDomain.PriorityHigh,
 		})
 
 		return nil
@@ -137,7 +138,7 @@ func (s *authService) RegisterTenant(ctx context.Context, data dto.RegisterTenan
 		return nil, err
 	}
 
-	fmt.Printf("📱 OTP for %s: %s (expires in 10 minutes)\n", data.Phone, otp)
+	fmt.Printf("📱 OTP for %s: %s (expires in 10 minutes)\n", data.Email, otp)
 
 	return &dto.UserResponse{
 		ID:       user.ID,
@@ -160,7 +161,7 @@ func (s *authService) RegisterIndividual(ctx context.Context, data dto.RegisterI
 		return nil, errors.New("phone number is required")
 	}
 
-	otp := "123456"
+	otp := GenerateOTP()
 	otpExpiresAt := time.Now().Add(10 * time.Minute)
 
 	var user models.User
@@ -209,22 +210,24 @@ func (s *authService) RegisterIndividual(ctx context.Context, data dto.RegisterI
 			return err
 		}
 
-		// 4. Trigger Welcome Email
-		templateVars := map[string]interface{}{
-			"name":           user.Name,
-			"dashboard_link": config.GlobalConfig.AppBaseURL + "/dashboard",
-			"subject":        "Welcome to Practixa!",
-		}
-		fullTemplate := templates.Wrap(WelcomeTemplate)
+		// 4. Send OTP Verification Email (skip for social login users)
+		if !data.IsSocial {
+			templateVars := map[string]interface{}{
+				"name":    user.Name,
+				"otp":     otp,
+				"subject": "Verify your account",
+			}
+			fullTemplate := templates.Wrap(VerifyOTPTemplate)
 
-		s.notifServ.Send(ctx, notifService.SendRequest{
-			TenantID:  tenant.ID,
-			Channel:   "email",
-			Recipient: *user.Email,
-			Content:   fullTemplate,
-			Variables: templateVars,
-			Priority:  "high",
-		})
+			s.notifServ.Send(ctx, notifService.SendRequest{
+				TenantID:  tenant.ID,
+				Channel:   notifDomain.ChannelEmail,
+				Recipient: *user.Email,
+				Content:   fullTemplate,
+				Variables: templateVars,
+				Priority:  notifDomain.PriorityHigh,
+			})
+		}
 
 		return nil
 	})
@@ -233,7 +236,7 @@ func (s *authService) RegisterIndividual(ctx context.Context, data dto.RegisterI
 		return nil, err
 	}
 
-	fmt.Printf("📱 Individual OTP for %s: %s\n", data.Phone, otp)
+	fmt.Printf("📱 Individual OTP for %s: %s\n", data.Email, otp)
 
 	return &dto.UserResponse{
 		ID:       user.ID,
@@ -482,11 +485,11 @@ func (s *authService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 
 	s.notifServ.Send(ctx, notifService.SendRequest{
 		TenantID:  *user.TenantID,
-		Channel:   "email",
+		Channel:   notifDomain.ChannelEmail,
 		Recipient: *user.Email,
 		Content:   fullTemplate,
 		Variables: templateVars,
-		Priority:  "high",
+		Priority:  notifDomain.PriorityHigh,
 	})
 
 	return nil
@@ -498,7 +501,7 @@ func (s *authService) ForgotPassword(ctx context.Context, data dto.ForgotPasswor
 		return errors.New("user not found")
 	}
 
-	otp := "123456" // Default for dev
+	otp := GenerateOTP()
 	expiresAt := time.Now().Add(15 * time.Minute)
 
 	if err := s.authRepo.UpdateOTP(ctx, user.ID, &otp, &expiresAt); err != nil {
@@ -510,16 +513,16 @@ func (s *authService) ForgotPassword(ctx context.Context, data dto.ForgotPasswor
 		"name":       user.Name,
 		"otp":        otp,
 		"reset_link": config.GlobalConfig.AppBaseURL + "/reset-password?email=" + *user.Email,
-		"subject":    "Reset your Practixa password",
+		"subject":    "Reset your password",
 	}
-	fullTemplate := templates.Wrap(InvitationTemplate)
+	fullTemplate := templates.Wrap(PasswordResetTemplate)
 	s.notifServ.Send(ctx, notifService.SendRequest{
 		TenantID:  *user.TenantID,
-		Channel:   "email",
+		Channel:   notifDomain.ChannelEmail,
 		Recipient: *user.Email,
 		Content:   fullTemplate,
 		Variables: templateVars,
-		Priority:  "high",
+		Priority:  notifDomain.PriorityHigh,
 	})
 
 	fmt.Printf("📧 Password Reset OTP for %s: %s\n", data.Identifier, otp)
@@ -563,11 +566,11 @@ func (s *authService) ResetPassword(ctx context.Context, data dto.ResetPasswordD
 
 		s.notifServ.Send(ctx, notifService.SendRequest{
 			TenantID:  *user.TenantID,
-			Channel:   "email",
+			Channel:   notifDomain.ChannelEmail,
 			Recipient: *user.Email,
 			Content:   fullTemplate,
 			Variables: templateVars,
-			Priority:  "high",
+			Priority:  notifDomain.PriorityHigh,
 		})
 	}
 
